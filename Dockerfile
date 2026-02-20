@@ -42,17 +42,27 @@ RUN npm ci --only=production && \
 
 # Copy Prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy migration script
-COPY scripts/migrate.sh ./scripts/migrate.sh
-RUN chmod +x scripts/migrate.sh
-
-# Change ownership to nodejs user
+# Change ownership to nodejs user BEFORE creating script
 RUN chown -R nodejs:nodejs /app
+
+# Create migration script as root (before switching user)
+RUN mkdir -p scripts && \
+    echo '#!/bin/sh' > scripts/migrate.sh && \
+    echo 'set -e' >> scripts/migrate.sh && \
+    echo 'if [ -z "$DATABASE_URL" ]; then' >> scripts/migrate.sh && \
+    echo '  echo "Error: DATABASE_URL not set"' >> scripts/migrate.sh && \
+    echo '  exit 1' >> scripts/migrate.sh && \
+    echo 'fi' >> scripts/migrate.sh && \
+    echo 'echo "Running database migrations..."' >> scripts/migrate.sh && \
+    echo 'npx prisma db push --skip-generate --skip-validate' >> scripts/migrate.sh && \
+    chmod +x scripts/migrate.sh && \
+    chown nodejs:nodejs scripts/migrate.sh
 
 # Switch to non-root user
 USER nodejs
