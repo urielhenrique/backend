@@ -47,6 +47,10 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy migration script
+COPY scripts/migrate.sh ./scripts/migrate.sh
+RUN chmod +x scripts/migrate.sh
+
 # Change ownership to nodejs user
 RUN chown -R nodejs:nodejs /app
 
@@ -63,6 +67,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start application
-CMD ["node", "dist/server.js"]
+# Start application with migrations
+CMD ["sh", "-c", "scripts/migrate.sh && node dist/server.js"]
 
