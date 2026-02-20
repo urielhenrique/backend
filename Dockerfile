@@ -60,7 +60,7 @@ RUN mkdir -p scripts && \
     echo '  exit 1' >> scripts/migrate.sh && \
     echo 'fi' >> scripts/migrate.sh && \
     echo 'echo "Running database migrations..."' >> scripts/migrate.sh && \
-    echo 'npx prisma db push --skip-generate --skip-validate' >> scripts/migrate.sh && \
+    echo 'npx prisma db push --accept-data-loss' >> scripts/migrate.sh && \
     chmod +x scripts/migrate.sh && \
     chown nodejs:nodejs scripts/migrate.sh
 
