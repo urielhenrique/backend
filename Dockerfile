@@ -21,7 +21,7 @@ COPY tsconfig.json ./
 RUN npm run build 2>/dev/null || npx tsc
 
 # Production stage
-FROM node:18-alpine
+FROM node:20.19-alpine
 
 WORKDIR /app
 
