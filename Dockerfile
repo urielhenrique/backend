@@ -64,4 +64,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start application
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma && node dist/server.js"]
+
