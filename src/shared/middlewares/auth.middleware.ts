@@ -9,9 +9,7 @@ interface TokenPayload {
   role: "ADMIN" | "FUNCIONARIO";
 }
 
-export interface AuthRequest extends Request {
-  user?: TokenPayload;
-}
+export type AuthRequest = Request;
 
 export function authMiddleware(
   req: AuthRequest,
