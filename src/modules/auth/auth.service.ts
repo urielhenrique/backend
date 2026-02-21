@@ -2,8 +2,13 @@ import prisma from "../../shared/database/prisma";
 import { PlanoService } from "../../shared/services/plano.service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const googleClient = GOOGLE_CLIENT_ID
+  ? new OAuth2Client(GOOGLE_CLIENT_ID)
+  : null;
 
 export class AuthService {
   private planoService = new PlanoService();
@@ -119,5 +124,82 @@ export class AuthService {
       email: usuario.email,
       role: usuario.role,
     };
+  }
+
+  /**
+   * OAuth Google - Login/Registro
+   */
+  async googleAuth(googleToken: string) {
+    if (!googleClient) {
+      throw new Error("Google OAuth não configurado. Defina GOOGLE_CLIENT_ID");
+    }
+
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: googleToken,
+        audience: GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) throw new Error("Payload inválido");
+
+      const { email, name, picture } = payload;
+
+      if (!email) throw new Error("Email não fornecido pelo Google");
+
+      // Verificar se usuário já existe
+      let user = await prisma.usuario.findUnique({
+        where: { email },
+        include: { estabelecimento: true },
+      });
+
+      // Se não existe, criar novo usuário e estabelecimento
+      if (!user) {
+        const nomeEstabelecimento = name || email.split("@")[0];
+        const senhaHash = await bcrypt.hash(Math.random().toString(), 10); // Senha aleatória para OAuth
+
+        const estabelecimento = await prisma.estabelecimento.create({
+          data: {
+            nome: nomeEstabelecimento,
+            usuarios: {
+              create: {
+                nome: name || email,
+                email,
+                senhaHash,
+                role: "ADMIN",
+              },
+            },
+          },
+          include: { usuarios: true },
+        });
+
+        user = estabelecimento.usuarios[0];
+        user.estabelecimento = estabelecimento;
+      }
+
+      const token = jwt.sign(
+        {
+          userId: user.id,
+          estabelecimentoId: user.estabelecimentoId,
+          role: user.role,
+        },
+        JWT_SECRET,
+        { expiresIn: "7d" },
+      );
+
+      return {
+        token,
+        user: {
+          id: user.id,
+          name: user.nome,
+          email: user.email,
+          role: user.role,
+          estabelecimento_id: user.estabelecimentoId,
+          estabelecimento_nome: user.estabelecimento.nome,
+        },
+      };
+    } catch (error: any) {
+      throw new Error(`Falha na autenticação Google: ${error.message}`);
+    }
   }
 }

@@ -10,6 +10,12 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import fornecedorRoutes from "./modules/fornecedor/fornecedor.routes";
 import planoRoutes from "./modules/plano/plano.routes";
 import seedRoutes from "./modules/seed/seed.routes";
+import adminRoutes from "./modules/admin/admin.routes";
+import {
+  securityHeaders,
+  apiLimiter,
+  loginLimiter,
+} from "./shared/middlewares/security.middleware";
 
 const app = express();
 
@@ -49,6 +55,14 @@ app.use(express.json());
 
 /**
  * ==========================================
+ * SECURITY MIDDLEWARES
+ * ==========================================
+ */
+app.use(securityHeaders);
+app.use(apiLimiter);
+
+/**
+ * ==========================================
  * LOG MIDDLEWARE (DEBUG)
  * ==========================================
  */
@@ -79,6 +93,7 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/fornecedores", fornecedorRoutes);
 app.use("/plano", planoRoutes);
 app.use("/seed", seedRoutes);
+app.use("/admin", adminRoutes);
 
 /**
  * ==========================================

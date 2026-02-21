@@ -35,6 +35,25 @@ export class AuthController {
     }
   }
 
+  /**
+   * Google Auth - POST /auth/google
+   */
+  async googleLogin(req: Request, res: Response) {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({ error: "ID Token obrigatório" });
+      }
+
+      const result = await authService.googleAuth(idToken);
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   async me(req: AuthRequest, res: Response) {
     const user = await prisma.usuario.findUnique({
       where: { id: req.user!.userId },
