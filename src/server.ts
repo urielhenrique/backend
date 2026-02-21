@@ -13,6 +13,18 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Log middleware for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
+// Health check route - must be before other routes
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/auth", authRoutes);
 app.use("/estabelecimento", estabelecimentoRoutes);
 app.use("/produtos", produtoRoutes);
@@ -21,12 +33,14 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/fornecedores", fornecedorRoutes);
 app.use("/plano", planoRoutes);
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+// 404 handler
+app.use((req, res) => {
+  console.log(`404 - Route not found: ${req.method} ${req.path}`);
+  res.status(404).json({ error: "Route not found", path: req.path });
 });
 
 const PORT = parseInt(process.env.PORT || "3000", 10);
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });
