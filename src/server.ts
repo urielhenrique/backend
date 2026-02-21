@@ -9,6 +9,7 @@ import movimentacaoRoutes from "./modules/movimentacao/movimentacao.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import fornecedorRoutes from "./modules/fornecedor/fornecedor.routes";
 import planoRoutes from "./modules/plano/plano.routes";
+import seedRoutes from "./modules/seed/seed.routes";
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.use("/movimentacoes", movimentacaoRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/fornecedores", fornecedorRoutes);
 app.use("/plano", planoRoutes);
+app.use("/seed", seedRoutes);
 
 /**
  * ==========================================
