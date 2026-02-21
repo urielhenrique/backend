@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../shared/database/prisma";
 import bcrypt from "bcrypt";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * Endpoint para criar usuario ADMIN
