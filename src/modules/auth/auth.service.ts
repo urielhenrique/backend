@@ -6,7 +6,8 @@ import { OAuth2Client } from "google-auth-library";
 
 const JWT_SECRET: string = process.env.JWT_SECRET || "supersecret";
 const JWT_EXPIRES_IN: string = process.env.JWT_EXPIRES_IN || "1h";
-const JWT_REFRESH_EXPIRES_IN: string = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+const JWT_REFRESH_EXPIRES_IN: string =
+  process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
 
@@ -32,14 +33,18 @@ export class AuthService {
    * Gerar access token (1 hora)
    */
   private generateAccessToken(payload: any): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
+    return jwt.sign(payload, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    } as jwt.SignOptions);
   }
 
   /**
    * Gerar refresh token (7 dias)
    */
   private generateRefreshToken(payload: any): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions);
+    return jwt.sign(payload, JWT_SECRET, {
+      expiresIn: JWT_REFRESH_EXPIRES_IN,
+    } as jwt.SignOptions);
   }
 
   async register(
