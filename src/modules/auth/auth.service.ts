@@ -173,8 +173,7 @@ export class AuthService {
           include: { usuarios: true },
         });
 
-        user = estabelecimento.usuarios[0];
-        user.estabelecimento = estabelecimento;
+        user = { ...estabelecimento.usuarios[0], estabelecimento };
       }
 
       const token = jwt.sign(

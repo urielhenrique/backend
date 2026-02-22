@@ -117,7 +117,7 @@ router.get(
   isSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { plan } = req.params;
+      const plan = String(req.params.plan);
 
       if (!["FREE", "PRO"].includes(plan.toUpperCase())) {
         return res
@@ -205,7 +205,7 @@ router.delete(
   isSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
 
       const updated = await prisma.estabelecimento.update({
         where: { id },
