@@ -18,7 +18,7 @@
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
     "@types/node": "^25.3.0",
-    "bcrypt": "^6.0.0",
+    "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csurf": "^1.11.0",
@@ -27,7 +27,7 @@
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.2.0",
     "google-auth-library": "^9.6.0",
-    "helmet": "^9.0.0",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.3",
     "prisma": "^7.4.0",
     "stripe": "^17.5.0",
@@ -35,7 +35,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
+    "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.19",
     "@types/csurf": "^1.11.5",
