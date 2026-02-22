@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import {
   authMiddleware,
+  requireSystemAdmin,
   AuthRequest,
 } from "../../shared/middlewares/auth.middleware";
 import prisma from "../../shared/database/prisma";
@@ -8,40 +9,13 @@ import prisma from "../../shared/database/prisma";
 const router = Router();
 
 /**
- * Middleware: Verificar se usuário é ADMIN do sistema
- */
-const isSystemAdmin = async (
-  req: AuthRequest,
-  res: Response,
-  next: Function,
-) => {
-  try {
-    const user = await prisma.usuario.findUnique({
-      where: { id: req.user!.userId },
-    });
-
-    // Por simplicidade, verificamos se o primeiro usuário é ADMIN
-    // Em produção, adicione um campo "isSystemAdmin" no banco
-    if (user?.role !== "ADMIN") {
-      return res
-        .status(403)
-        .json({ error: "Acesso negado. Apenas admin pode acessar." });
-    }
-
-    next();
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-/**
  * GET /admin/dashboard
- * Retorna estatísticas do sistema
+ * Retorna estatísticas do sistema (apenas admin do sistema)
  */
 router.get(
   "/dashboard",
   authMiddleware,
-  isSystemAdmin,
+  requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
       const totalEstabelecimentos = await prisma.estabelecimento.count();
@@ -53,56 +27,100 @@ router.get(
       });
 
       const totalUsuarios = await prisma.usuario.count();
+      const totalProdutos = await prisma.produto.count();
+      const totalMovimentacoes = await prisma.movimentacao.count();
+
+      // Subscriptions ativas
+      const activeSubscriptions = await prisma.subscription.count({
+        where: { status: "active" },
+      });
+
+      // Receita mensal (assumindo R$ 49,90 por assinatura PRO)
+      const monthlyRevenue = proEstabelecimentos * 49.9;
 
       res.json({
         totalEstabelecimentos,
         freeEstabelecimentos,
         proEstabelecimentos,
         totalUsuarios,
+        totalProdutos,
+        totalMovimentacoes,
+        activeSubscriptions,
+        monthlyRevenue: monthlyRevenue.toFixed(2),
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
+      });
     }
   },
 );
 
 /**
  * GET /admin/users
- * Lista todos os usuários/estabelecimentos
+ * Lista todos os usuários/estabelecimentos (com paginação)
  */
 router.get(
   "/users",
   authMiddleware,
-  isSystemAdmin,
+  requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const estabelecimentos = await prisma.estabelecimento.findMany({
-        include: {
-          usuarios: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-              role: true,
-              createdAt: true,
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
+
+      const [estabelecimentos, total] = await Promise.all([
+        prisma.estabelecimento.findMany({
+          include: {
+            usuarios: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            subscriptions: {
+              where: { status: { in: ["active", "trialing"] } },
+              orderBy: { createdAt: "desc" },
+              take: 1,
             },
           },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.estabelecimento.count(),
+      ]);
 
       const users = estabelecimentos.map((est) => ({
         estabelecimentoId: est.id,
         estabelecimentoNome: est.nome,
         plano: est.plano,
         ativo: est.ativo,
+        stripeCustomerId: est.stripeCustomerId,
         criadoEm: est.createdAt,
         usuarios: est.usuarios,
+        subscription: est.subscriptions[0] || null,
       }));
 
-      res.json(users);
+      res.json({
+        data: users,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
+      });
     }
   },
 );
@@ -114,15 +132,16 @@ router.get(
 router.get(
   "/users/plan/:plan",
   authMiddleware,
-  isSystemAdmin,
+  requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
       const plan = String(req.params.plan);
 
       if (!["FREE", "PRO"].includes(plan.toUpperCase())) {
-        return res
-          .status(400)
-          .json({ error: "Plano inválido. Use 'FREE' ou 'PRO'" });
+        return res.status(400).json({
+          error: "INVALID_PLAN",
+          message: "Plano inválido. Use 'FREE' ou 'PRO'",
+        });
       }
 
       const estabelecimentos = await prisma.estabelecimento.findMany({
@@ -138,6 +157,7 @@ router.get(
             },
           },
         },
+        orderBy: { createdAt: "desc" },
       });
 
       res.json({
@@ -146,58 +166,69 @@ router.get(
         estabelecimentos,
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
-
-/**
- * GET /admin/users/online
- * Simula usuários online (baseado em último acesso)
- * Em produção, implemente rastreamento real de sessões
- */
-router.get(
-  "/users/online",
-  authMiddleware,
-  isSystemAdmin,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      // Para simplificar, retornamos usuários criados nos últimos 30 minutos
-      const umMinutoAtras = new Date(Date.now() - 30 * 60 * 1000);
-
-      const usuariosRecentes = await prisma.usuario.findMany({
-        where: {
-          createdAt: {
-            gte: umMinutoAtras,
-          },
-        },
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          role: true,
-          estabelecimento: {
-            select: {
-              nome: true,
-              plano: true,
-            },
-          },
-        },
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
       });
-
-      res.json({
-        usuariosOnline: usuariosRecentes.length,
-        usuarios: usuariosRecentes,
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
     }
   },
 );
 
 /**
  * DELETE /admin/estabelecimento/:id
- * Desativar estabelecimento
+ * Desativar estabelecimento (soft delete)
+ */
+router.delete(
+  "/estabelecimento/:id",
+  authMiddleware,
+  requireSystemAdmin,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      await prisma.estabelecimento.update({
+        where: { id },
+        data: { ativo: false },
+      });
+
+      res.json({ message: "Estabelecimento desativado com sucesso" });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * POST /admin/estabelecimento/:id/activate
+ * Reativar estabelecimento
+ */
+router.post(
+  "/estabelecimento/:id/activate",
+  authMiddleware,
+  requireSystemAdmin,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      await prisma.estabelecimento.update({
+        where: { id },
+        data: { ativo: true },
+      });
+
+      res.json({ message: "Estabelecimento reativado com sucesso" });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
+      });
+    }
+  },
+);
+
+export default router;
  */
 router.delete(
   "/estabelecimento/:id",

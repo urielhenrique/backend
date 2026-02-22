@@ -19,7 +19,10 @@ export class AuthController {
 
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({
+        error: "REGISTRATION_FAILED",
+        message: error.message,
+      });
     }
   }
 
@@ -31,7 +34,10 @@ export class AuthController {
 
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({
+        error: "LOGIN_FAILED",
+        message: error.message,
+      });
     }
   }
 
@@ -40,33 +46,57 @@ export class AuthController {
    */
   async googleLogin(req: Request, res: Response) {
     try {
-      const { idToken } = req.body;
+      const { idToken, credential } = req.body;
 
-      if (!idToken) {
-        return res.status(400).json({ error: "ID Token obrigatório" });
+      // Aceita tanto idToken quanto credential
+      const token = idToken || credential;
+
+      if (!token) {
+        return res.status(400).json({
+          error: "MISSING_TOKEN",
+          message: "Token do Google obrigatório",
+        });
       }
 
-      const result = await authService.googleAuth(idToken);
+      const result = await authService.googleAuth(token);
 
       res.json(result);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({
+        error: "GOOGLE_AUTH_FAILED",
+        message: error.message,
+      });
     }
   }
 
   async me(req: AuthRequest, res: Response) {
-    const user = await prisma.usuario.findUnique({
-      where: { id: req.user!.userId },
-      include: { estabelecimento: true },
-    });
+    try {
+      const user = await prisma.usuario.findUnique({
+        where: { id: req.user!.userId },
+        include: { estabelecimento: true },
+      });
 
-    res.json({
-      id: user?.id,
-      name: user?.nome,
-      email: user?.email,
-      role: user?.role,
-      estabelecimento_id: user?.estabelecimentoId,
-      estabelecimento_nome: user?.estabelecimento.nome,
-    });
+      if (!user) {
+        return res.status(404).json({
+          error: "USER_NOT_FOUND",
+          message: "Usuário não encontrado",
+        });
+      }
+
+      res.json({
+        id: user.id,
+        name: user.nome,
+        email: user.email,
+        role: user.role,
+        estabelecimento_id: user.estabelecimentoId,
+        estabelecimento_nome: user.estabelecimento.nome,
+        plano: user.estabelecimento.plano,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "INTERNAL_ERROR",
+        message: error.message,
+      });
+    }
   }
 }

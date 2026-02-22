@@ -5,7 +5,11 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
+
 const googleClient = GOOGLE_CLIENT_ID
   ? new OAuth2Client(GOOGLE_CLIENT_ID)
   : null;
@@ -13,13 +17,48 @@ const googleClient = GOOGLE_CLIENT_ID
 export class AuthService {
   private planoService = new PlanoService();
 
+  /**
+   * Determina role baseado no email
+   * Se email for MY_ADMIN_EMAIL configura como ADMIN
+   */
+  private determineRole(email: string): "ADMIN" | "FUNCIONARIO" {
+    if (MY_ADMIN_EMAIL && email === MY_ADMIN_EMAIL) {
+      return "ADMIN";
+    }
+    return "ADMIN"; // Primeiro usuário do estabelecimento é ADMIN
+  }
+
+  /**
+   * Gerar access token (1 hora)
+   */
+  private generateAccessToken(payload: any): string {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  }
+
+  /**
+   * Gerar refresh token (7 dias)
+   */
+  private generateRefreshToken(payload: any): string {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
+  }
+
   async register(
     nomeEstabelecimento: string,
     nome: string,
     email: string,
     senha: string,
   ) {
-    const senhaHash = await bcrypt.hash(senha, 10);
+    // Verificar se email já existe
+    const existingUser = await prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new Error("Email já cadastrado");
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 12); // Usar bcrypt rounds 12 (mais seguro)
+    const role = this.determineRole(email);
 
     const estabelecimento = await prisma.estabelecimento.create({
       data: {
@@ -29,7 +68,7 @@ export class AuthService {
             nome,
             email,
             senhaHash,
-            role: "ADMIN",
+            role,
           },
         },
       },
@@ -38,17 +77,28 @@ export class AuthService {
 
     const user = estabelecimento.usuarios[0];
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        estabelecimentoId: estabelecimento.id,
-        role: user.role,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" },
-    );
+    const tokenPayload = {
+      userId: user.id,
+      estabelecimentoId: estabelecimento.id,
+      role: user.role,
+    };
 
-    return { token };
+    const token = this.generateAccessToken(tokenPayload);
+    const refreshToken = this.generateRefreshToken(tokenPayload);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.nome,
+        email: user.email,
+        role: user.role,
+        estabelecimento_id: estabelecimento.id,
+        estabelecimento_nome: estabelecimento.nome,
+        plano: estabelecimento.plano,
+      },
+    };
   }
 
   async login(email: string, senha: string) {
@@ -60,27 +110,28 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error("Usuário não encontrado");
+      // Não expor se usuário existe ou não (previne user enumeration)
+      throw new Error("Credenciais inválidas");
     }
 
     const senhaValida = await bcrypt.compare(senha, user.senhaHash);
 
     if (!senhaValida) {
-      throw new Error("Senha inválida");
+      throw new Error("Credenciais inválidas");
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        estabelecimentoId: user.estabelecimentoId,
-        role: user.role,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" },
-    );
+    const tokenPayload = {
+      userId: user.id,
+      estabelecimentoId: user.estabelecimentoId,
+      role: user.role,
+    };
+
+    const token = this.generateAccessToken(tokenPayload);
+    const refreshToken = this.generateRefreshToken(tokenPayload);
 
     return {
       token,
+      refreshToken,
       user: {
         id: user.id,
         name: user.nome,
@@ -88,12 +139,13 @@ export class AuthService {
         role: user.role,
         estabelecimento_id: user.estabelecimentoId,
         estabelecimento_nome: user.estabelecimento.nome,
+        plano: user.estabelecimento.plano,
       },
     };
   }
 
   /**
-   * Cria um novo usuário em um estabelecimento existente
+   * Criar um novo usuário em um estabelecimento existente
    * Valida o limite de usuários antes de criar
    */
   async createUsuario(
@@ -106,7 +158,16 @@ export class AuthService {
     // Valida limite de usuários antes de criar
     await this.planoService.checkLimite(estabelecimentoId, "usuario");
 
-    const senhaHash = await bcrypt.hash(senha, 10);
+    // Verificar se email já existe
+    const existingUser = await prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new Error("Email já cadastrado");
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 12);
 
     const usuario = await prisma.usuario.create({
       data: {
@@ -143,7 +204,7 @@ export class AuthService {
       const payload = ticket.getPayload();
       if (!payload) throw new Error("Payload inválido");
 
-      const { email, name, picture } = payload;
+      const { email, name } = payload;
 
       if (!email) throw new Error("Email não fornecido pelo Google");
 
@@ -156,7 +217,8 @@ export class AuthService {
       // Se não existe, criar novo usuário e estabelecimento
       if (!user) {
         const nomeEstabelecimento = name || email.split("@")[0];
-        const senhaHash = await bcrypt.hash(Math.random().toString(), 10); // Senha aleatória para OAuth
+        const senhaHash = await bcrypt.hash(Math.random().toString(), 12);
+        const role = this.determineRole(email);
 
         const estabelecimento = await prisma.estabelecimento.create({
           data: {
@@ -166,7 +228,7 @@ export class AuthService {
                 nome: name || email,
                 email,
                 senhaHash,
-                role: "ADMIN",
+                role,
               },
             },
           },
@@ -176,18 +238,18 @@ export class AuthService {
         user = { ...estabelecimento.usuarios[0], estabelecimento };
       }
 
-      const token = jwt.sign(
-        {
-          userId: user.id,
-          estabelecimentoId: user.estabelecimentoId,
-          role: user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: "7d" },
-      );
+      const tokenPayload = {
+        userId: user.id,
+        estabelecimentoId: user.estabelecimentoId,
+        role: user.role,
+      };
+
+      const token = this.generateAccessToken(tokenPayload);
+      const refreshToken = this.generateRefreshToken(tokenPayload);
 
       return {
         token,
+        refreshToken,
         user: {
           id: user.id,
           name: user.nome,
@@ -195,6 +257,7 @@ export class AuthService {
           role: user.role,
           estabelecimento_id: user.estabelecimentoId,
           estabelecimento_nome: user.estabelecimento.nome,
+          plano: user.estabelecimento.plano,
         },
       };
     } catch (error: any) {

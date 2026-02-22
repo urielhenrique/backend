@@ -16,12 +16,15 @@ model Estabelecimento {
   ativo     Boolean  @default(true)
   limiteProdutos Int  @default(50)
   limiteUsuarios Int  @default(1)
+  stripeCustomerId String?  @unique
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   usuarios       Usuario[]
   produtos       Produto[]
   fornecedores   Fornecedor[]
   movimentacoes  Movimentacao[]
+  subscriptions  Subscription[]
 }
 
 model Usuario {
@@ -135,4 +138,33 @@ enum Status {
   OK
   Atencao
   Repor
+}
+
+model Subscription {
+  id                 String   @id @default(uuid())
+  stripeSubscriptionId String @unique
+  stripePriceId      String
+  status             SubscriptionStatus @default(active)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean  @default(false)
+  
+  estabelecimentoId  String
+  estabelecimento    Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([estabelecimentoId])
+  @@index([stripeSubscriptionId])
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  incomplete
+  incomplete_expired
+  past_due
+  trialing
+  unpaid
 }
