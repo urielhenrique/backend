@@ -184,7 +184,7 @@ router.delete(
   requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
 
       await prisma.estabelecimento.update({
         where: { id },
@@ -211,7 +211,7 @@ router.post(
   requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
 
       await prisma.estabelecimento.update({
         where: { id },
@@ -228,12 +228,14 @@ router.post(
   },
 );
 
-export default router;
+/**
+ * DELETE /admin/estabelecimento/:id
+ * Desativar estabelecimento
  */
 router.delete(
   "/estabelecimento/:id",
   authMiddleware,
-  isSystemAdmin,
+  requireSystemAdmin,
   async (req: AuthRequest, res: Response) => {
     try {
       const id = String(req.params.id);
