@@ -28,11 +28,11 @@ export const loginLimiter = rateLimit({
 
 /**
  * Rate Limiter geral para API
- * Máximo 100 requisições a cada 15 minutos por IP
+ * Máximo 500 requisições a cada 15 minutos por IP (aumentado para operações em lote)
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: IS_PRODUCTION ? 100 : 1000, // Mais permissivo em dev
+  max: IS_PRODUCTION ? 500 : 2000, // Aumentado para permitir operações em lote
   message: {
     error: "RATE_LIMIT_EXCEEDED",
     message: "Muitas requisições. Tente novamente mais tarde.",
