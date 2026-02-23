@@ -46,6 +46,10 @@ class AuthService {
         });
     }
     async register(nomeEstabelecimento, nome, email, senha) {
+        // Validar campos obrigatórios
+        if (!nomeEstabelecimento || !nome || !email || !senha) {
+            throw new Error("Todos os campos são obrigatórios");
+        }
         // Verificar se email já existe
         const existingUser = await prisma_1.default.usuario.findUnique({
             where: { email },

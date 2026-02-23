@@ -25,7 +25,18 @@ class AuthController {
     }
     async register(req, res) {
         try {
-            const { nomeEstabelecimento, nome, email, senha } = req.body;
+            console.log("📝 Recebendo registro:", req.body);
+            // Normalizar campos: aceitar tanto camelCase quanto snake_case
+            const nomeEstabelecimento = req.body.nomeEstabelecimento || req.body.nome_estabelecimento;
+            const nome = req.body.nome;
+            const email = req.body.email;
+            const senha = req.body.senha || req.body.password;
+            console.log("✅ Campos normalizados:", {
+                nomeEstabelecimento,
+                nome,
+                email,
+                senha: "***",
+            });
             const result = await authService.register(nomeEstabelecimento, nome, email, senha);
             // Define cookies httpOnly
             this.setAuthCookies(res, result.token, result.refreshToken);

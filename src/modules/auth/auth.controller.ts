@@ -33,7 +33,21 @@ export class AuthController {
 
   async register(req: Request, res: Response) {
     try {
-      const { nomeEstabelecimento, nome, email, senha } = req.body;
+      console.log("📝 Recebendo registro:", req.body);
+
+      // Normalizar campos: aceitar tanto camelCase quanto snake_case
+      const nomeEstabelecimento =
+        req.body.nomeEstabelecimento || req.body.nome_estabelecimento;
+      const nome = req.body.nome;
+      const email = req.body.email;
+      const senha = req.body.senha || req.body.password;
+
+      console.log("✅ Campos normalizados:", {
+        nomeEstabelecimento,
+        nome,
+        email,
+        senha: "***",
+      });
 
       const result = await authService.register(
         nomeEstabelecimento,

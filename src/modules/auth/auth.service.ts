@@ -53,6 +53,11 @@ export class AuthService {
     email: string,
     senha: string,
   ) {
+    // Validar campos obrigatórios
+    if (!nomeEstabelecimento || !nome || !email || !senha) {
+      throw new Error("Todos os campos são obrigatórios");
+    }
+
     // Verificar se email já existe
     const existingUser = await prisma.usuario.findUnique({
       where: { email },
