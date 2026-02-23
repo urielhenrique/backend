@@ -62,6 +62,14 @@ export class MovimentacaoService {
 
       const valorTotal = quantidade * (valorUnitario ?? 0);
 
+      console.log("💰 Movimentação:", {
+        tipo: tipoNormalizado,
+        quantidade,
+        valorUnitario,
+        valorTotal,
+        produtoNome: produto.nome,
+      });
+
       await tx.produto.update({
         where: { id: produto.id },
         data: {
