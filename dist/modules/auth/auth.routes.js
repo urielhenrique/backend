@@ -6,8 +6,12 @@ const auth_middleware_1 = require("../../shared/middlewares/auth.middleware");
 const security_middleware_1 = require("../../shared/middlewares/security.middleware");
 const router = (0, express_1.Router)();
 const controller = new auth_controller_1.AuthController();
+// Rotas públicas
+router.get("/csrf-token", (req, res) => controller.getCsrfToken(req, res));
 router.post("/register", (req, res) => controller.register(req, res));
 router.post("/login", security_middleware_1.loginLimiter, (req, res) => controller.login(req, res));
 router.post("/google", security_middleware_1.loginLimiter, (req, res) => controller.googleLogin(req, res));
+// Rotas protegidas
 router.get("/me", auth_middleware_1.authMiddleware, (req, res) => controller.me(req, res));
+router.post("/logout", auth_middleware_1.authMiddleware, (req, res) => controller.logout(req, res));
 exports.default = router;

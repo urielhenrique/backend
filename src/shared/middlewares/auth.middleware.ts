@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../database/prisma";
+import { COOKIE_NAMES } from "../utils/cookie.config";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
@@ -17,23 +18,28 @@ export type AuthRequest = Request & {
 
 /**
  * Middleware de autenticação básica
- * Verifica JWT token
+ * Verifica JWT token do cookie httpOnly
  */
 export function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) {
-  const authHeader = req.headers.authorization;
+  // Tenta ler do cookie primeiro (novo método seguro)
+  let token = req.cookies?.[COOKIE_NAMES.ACCESS_TOKEN];
 
-  if (!authHeader) {
+  // Fallback: suporta Authorization header temporariamente para transição
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token) {
     return res.status(401).json({
       error: "UNAUTHORIZED",
       message: "Token não fornecido",
     });
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;

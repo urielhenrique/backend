@@ -40,21 +40,27 @@ exports.enforcePlanLimit = exports.requireProPlan = exports.requireSystemAdmin =
 exports.authMiddleware = authMiddleware;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../database/prisma"));
+const cookie_config_1 = require("../utils/cookie.config");
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
 /**
  * Middleware de autenticação básica
- * Verifica JWT token
+ * Verifica JWT token do cookie httpOnly
  */
 function authMiddleware(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
+    // Tenta ler do cookie primeiro (novo método seguro)
+    let token = req.cookies?.[cookie_config_1.COOKIE_NAMES.ACCESS_TOKEN];
+    // Fallback: suporta Authorization header temporariamente para transição
+    if (!token && req.headers.authorization) {
+        const authHeader = req.headers.authorization;
+        token = authHeader.split(" ")[1];
+    }
+    if (!token) {
         return res.status(401).json({
             error: "UNAUTHORIZED",
             message: "Token não fornecido",
         });
     }
-    const token = authHeader.split(" ")[1];
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         req.user = decoded;

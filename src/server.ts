@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import csrf from "csurf";
 
 import authRoutes from "./modules/auth/auth.routes";
 import estabelecimentoRoutes from "./modules/estabelecimento/estabelecimento.routes";
@@ -95,7 +97,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   }),
 );
 
@@ -118,6 +120,53 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+/**
+ * ==========================================
+ * COOKIE PARSER
+ * ==========================================
+ */
+app.use(cookieParser());
+
+/**
+ * ==========================================
+ * CSRF PROTECTION
+ * ==========================================
+ * Protege contra ataques CSRF usando cookies
+ * Token é gerado via GET /auth/csrf-token
+ */
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: IS_PRODUCTION,
+    sameSite: "strict",
+  },
+});
+
+// Aplica CSRF em todas as rotas exceto:
+// - GET requests (safe methods)
+// - /health (health check)
+// - /billing/webhook (Stripe webhook precisa do raw body)
+// - /auth/csrf-token (endpoint que gera o token)
+app.use((req, res, next) => {
+  // Skip CSRF para métodos seguros
+  if (
+    req.method === "GET" ||
+    req.method === "HEAD" ||
+    req.method === "OPTIONS"
+  ) {
+    return next();
+  }
+
+  // Skip CSRF para rotas específicas
+  const skipCsrfRoutes = ["/health", "/billing/webhook"];
+  if (skipCsrfRoutes.includes(req.path)) {
+    return next();
+  }
+
+  // Aplica CSRF para todas as outras rotas
+  csrfProtection(req, res, next);
+});
 
 /**
  * ==========================================

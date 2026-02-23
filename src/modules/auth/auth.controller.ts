@@ -2,10 +2,35 @@ import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import prisma from "../../shared/database/prisma";
 import { AuthRequest } from "../../shared/middlewares/auth.middleware";
+import {
+  ACCESS_TOKEN_COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE_OPTIONS,
+  COOKIE_NAMES,
+} from "../../shared/utils/cookie.config";
 
 const authService = new AuthService();
 
 export class AuthController {
+  /**
+   * Helper: Define cookies de autenticação
+   */
+  private setAuthCookies(res: Response, token: string, refreshToken: string) {
+    res.cookie(COOKIE_NAMES.ACCESS_TOKEN, token, ACCESS_TOKEN_COOKIE_OPTIONS);
+    res.cookie(
+      COOKIE_NAMES.REFRESH_TOKEN,
+      refreshToken,
+      REFRESH_TOKEN_COOKIE_OPTIONS,
+    );
+  }
+
+  /**
+   * Helper: Limpa cookies de autenticação
+   */
+  private clearAuthCookies(res: Response) {
+    res.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, { path: "/" });
+    res.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, { path: "/" });
+  }
+
   async register(req: Request, res: Response) {
     try {
       const { nomeEstabelecimento, nome, email, senha } = req.body;
@@ -17,7 +42,13 @@ export class AuthController {
         senha,
       );
 
-      res.json(result);
+      // Define cookies httpOnly
+      this.setAuthCookies(res, result.token, result.refreshToken);
+
+      // Retorna dados do usuário sem tokens
+      res.json({
+        user: result.user,
+      });
     } catch (error: any) {
       res.status(400).json({
         error: "REGISTRATION_FAILED",
@@ -32,7 +63,13 @@ export class AuthController {
 
       const result = await authService.login(email, password);
 
-      res.json(result);
+      // Define cookies httpOnly
+      this.setAuthCookies(res, result.token, result.refreshToken);
+
+      // Retorna dados do usuário sem tokens
+      res.json({
+        user: result.user,
+      });
     } catch (error: any) {
       res.status(400).json({
         error: "LOGIN_FAILED",
@@ -60,13 +97,50 @@ export class AuthController {
 
       const result = await authService.googleAuth(token);
 
-      res.json(result);
+      // Define cookies httpOnly
+      this.setAuthCookies(res, result.token, result.refreshToken);
+
+      // Retorna dados do usuário sem tokens
+      res.json({
+        user: result.user,
+      });
     } catch (error: any) {
       res.status(400).json({
         error: "GOOGLE_AUTH_FAILED",
         message: error.message,
       });
     }
+  }
+
+  /**
+   * Logout - POST /auth/logout
+   */
+  async logout(req: AuthRequest, res: Response) {
+    try {
+      // Limpa cookies
+      this.clearAuthCookies(res);
+
+      // TODO: Invalidar refresh token no banco de dados
+      // Implementar blacklist de tokens se necessário
+
+      res.json({
+        message: "Logout realizado com sucesso",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "LOGOUT_FAILED",
+        message: error.message,
+      });
+    }
+  }
+
+  /**
+   * CSRF Token - GET /auth/csrf-token
+   */
+  getCsrfToken(req: Request, res: Response) {
+    res.json({
+      csrfToken: req.csrfToken(),
+    });
   }
 
   async me(req: AuthRequest, res: Response) {

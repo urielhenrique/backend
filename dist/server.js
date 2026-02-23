@@ -7,6 +7,8 @@ require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const csurf_1 = __importDefault(require("csurf"));
 const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const estabelecimento_routes_1 = __importDefault(require("./modules/estabelecimento/estabelecimento.routes"));
 const produto_routes_1 = __importDefault(require("./modules/produto/produto.routes"));
@@ -84,7 +86,7 @@ app.use((0, cors_1.default)({
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 }));
 /**
  * ==========================================
@@ -102,6 +104,46 @@ app.use(express_1.default.json({
     },
 }));
 app.use(express_1.default.urlencoded({ extended: true, limit: "10kb" }));
+/**
+ * ==========================================
+ * COOKIE PARSER
+ * ==========================================
+ */
+app.use((0, cookie_parser_1.default)());
+/**
+ * ==========================================
+ * CSRF PROTECTION
+ * ==========================================
+ * Protege contra ataques CSRF usando cookies
+ * Token é gerado via GET /auth/csrf-token
+ */
+const csrfProtection = (0, csurf_1.default)({
+    cookie: {
+        httpOnly: true,
+        secure: IS_PRODUCTION,
+        sameSite: "strict",
+    },
+});
+// Aplica CSRF em todas as rotas exceto:
+// - GET requests (safe methods)
+// - /health (health check)
+// - /billing/webhook (Stripe webhook precisa do raw body)
+// - /auth/csrf-token (endpoint que gera o token)
+app.use((req, res, next) => {
+    // Skip CSRF para métodos seguros
+    if (req.method === "GET" ||
+        req.method === "HEAD" ||
+        req.method === "OPTIONS") {
+        return next();
+    }
+    // Skip CSRF para rotas específicas
+    const skipCsrfRoutes = ["/health", "/billing/webhook"];
+    if (skipCsrfRoutes.includes(req.path)) {
+        return next();
+    }
+    // Aplica CSRF para todas as outras rotas
+    csrfProtection(req, res, next);
+});
 /**
  * ==========================================
  * SECURITY MIDDLEWARES

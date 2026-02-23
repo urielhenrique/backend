@@ -6,13 +6,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const auth_service_1 = require("./auth.service");
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
+const cookie_config_1 = require("../../shared/utils/cookie.config");
 const authService = new auth_service_1.AuthService();
 class AuthController {
+    /**
+     * Helper: Define cookies de autenticação
+     */
+    setAuthCookies(res, token, refreshToken) {
+        res.cookie(cookie_config_1.COOKIE_NAMES.ACCESS_TOKEN, token, cookie_config_1.ACCESS_TOKEN_COOKIE_OPTIONS);
+        res.cookie(cookie_config_1.COOKIE_NAMES.REFRESH_TOKEN, refreshToken, cookie_config_1.REFRESH_TOKEN_COOKIE_OPTIONS);
+    }
+    /**
+     * Helper: Limpa cookies de autenticação
+     */
+    clearAuthCookies(res) {
+        res.clearCookie(cookie_config_1.COOKIE_NAMES.ACCESS_TOKEN, { path: "/" });
+        res.clearCookie(cookie_config_1.COOKIE_NAMES.REFRESH_TOKEN, { path: "/" });
+    }
     async register(req, res) {
         try {
             const { nomeEstabelecimento, nome, email, senha } = req.body;
             const result = await authService.register(nomeEstabelecimento, nome, email, senha);
-            res.json(result);
+            // Define cookies httpOnly
+            this.setAuthCookies(res, result.token, result.refreshToken);
+            // Retorna dados do usuário sem tokens
+            res.json({
+                user: result.user,
+            });
         }
         catch (error) {
             res.status(400).json({
@@ -25,7 +45,12 @@ class AuthController {
         try {
             const { email, password } = req.body;
             const result = await authService.login(email, password);
-            res.json(result);
+            // Define cookies httpOnly
+            this.setAuthCookies(res, result.token, result.refreshToken);
+            // Retorna dados do usuário sem tokens
+            res.json({
+                user: result.user,
+            });
         }
         catch (error) {
             res.status(400).json({
@@ -49,7 +74,12 @@ class AuthController {
                 });
             }
             const result = await authService.googleAuth(token);
-            res.json(result);
+            // Define cookies httpOnly
+            this.setAuthCookies(res, result.token, result.refreshToken);
+            // Retorna dados do usuário sem tokens
+            res.json({
+                user: result.user,
+            });
         }
         catch (error) {
             res.status(400).json({
@@ -57,6 +87,34 @@ class AuthController {
                 message: error.message,
             });
         }
+    }
+    /**
+     * Logout - POST /auth/logout
+     */
+    async logout(req, res) {
+        try {
+            // Limpa cookies
+            this.clearAuthCookies(res);
+            // TODO: Invalidar refresh token no banco de dados
+            // Implementar blacklist de tokens se necessário
+            res.json({
+                message: "Logout realizado com sucesso",
+            });
+        }
+        catch (error) {
+            res.status(500).json({
+                error: "LOGOUT_FAILED",
+                message: error.message,
+            });
+        }
+    }
+    /**
+     * CSRF Token - GET /auth/csrf-token
+     */
+    getCsrfToken(req, res) {
+        res.json({
+            csrfToken: req.csrfToken(),
+        });
     }
     async me(req, res) {
         try {

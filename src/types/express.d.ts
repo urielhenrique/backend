@@ -8,6 +8,8 @@ declare global {
         estabelecimentoId: string;
         role: "ADMIN" | "FUNCIONARIO";
       };
+      rawBody?: Buffer;
+      csrfToken?: () => string;
     }
   }
 }
