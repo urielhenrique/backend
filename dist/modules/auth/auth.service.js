@@ -33,13 +33,17 @@ class AuthService {
      * Gerar access token (1 hora)
      */
     generateAccessToken(payload) {
-        return jsonwebtoken_1.default.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        return jsonwebtoken_1.default.sign(payload, JWT_SECRET, {
+            expiresIn: JWT_EXPIRES_IN,
+        });
     }
     /**
      * Gerar refresh token (7 dias)
      */
     generateRefreshToken(payload) {
-        return jsonwebtoken_1.default.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
+        return jsonwebtoken_1.default.sign(payload, JWT_SECRET, {
+            expiresIn: JWT_REFRESH_EXPIRES_IN,
+        });
     }
     async register(nomeEstabelecimento, nome, email, senha) {
         // Verificar se email já existe

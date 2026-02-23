@@ -6,19 +6,29 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
-if (!STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY não configurado");
-}
-
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: "2025-02-24.acacia",
-});
+// Inicializa Stripe apenas se a chave estiver configurada
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: "2025-02-24.acacia",
+    })
+  : null;
 
 export class BillingService {
+  /**
+   * Verifica se o Stripe está configurado
+   */
+  private ensureStripeConfigured(): void {
+    if (!stripe) {
+      throw new Error("STRIPE_SECRET_KEY não configurado. Configure as variáveis de ambiente do Stripe.");
+    }
+  }
+
   /**
    * Criar sessão de checkout do Stripe
    */
   async createCheckoutSession(estabelecimentoId: string, userEmail: string) {
+    this.ensureStripeConfigured();
+    
     if (!STRIPE_PRICE_ID) {
       throw new Error("STRIPE_PRICE_ID não configurado");
     }
@@ -40,7 +50,7 @@ export class BillingService {
 
     // Criar customer no Stripe se não existir
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await stripe!.customers.create({
         email: userEmail,
         metadata: {
           estabelecimentoId: estabelecimento.id,
@@ -58,7 +68,7 @@ export class BillingService {
     }
 
     // Criar sessão de checkout
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe!.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       payment_method_types: ["card"],
@@ -85,6 +95,8 @@ export class BillingService {
    * Processar webhook do Stripe
    */
   async handleWebhook(body: Buffer, signature: string) {
+    this.ensureStripeConfigured();
+    
     if (!STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET não configurado");
     }
@@ -92,7 +104,7 @@ export class BillingService {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(
+      event = stripe!.webhooks.constructEvent(
         body,
         signature,
         STRIPE_WEBHOOK_SECRET,
@@ -252,6 +264,8 @@ export class BillingService {
    * Obter portal de gerenciamento de assinatura
    */
   async createPortalSession(estabelecimentoId: string) {
+    this.ensureStripeConfigured();
+    
     const estabelecimento = await prisma.estabelecimento.findUnique({
       where: { id: estabelecimentoId },
     });
@@ -260,7 +274,7 @@ export class BillingService {
       throw new Error("Nenhuma assinatura encontrada");
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await stripe!.billingPortal.sessions.create({
       customer: estabelecimento.stripeCustomerId,
       return_url: `${FRONTEND_URL}/dashboard`,
     });
