@@ -1,8 +1,12 @@
 import "dotenv/config"; // ✅ Carrega variáveis de ambiente ANTES de importar prisma
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Cria instância do Prisma sem adapter (mais simples para scripts)
-const prisma = new PrismaClient();
+// Cria instância do Prisma com o mesmo adapter usado no projeto
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+const prisma = new PrismaClient({ adapter });
 
 /**
  * Script para atualizar movimentações antigas que não têm valorTotal/valorUnitario
