@@ -124,24 +124,25 @@ const csrfProtection = (0, csurf_1.default)({
         sameSite: "strict",
     },
 });
-// Aplica CSRF em todas as rotas exceto:
-// - GET requests (safe methods)
-// - /health (health check)
-// - /billing/webhook (Stripe webhook precisa do raw body)
-// - /auth/csrf-token (endpoint que gera o token)
+// Aplica CSRF middleware em TODAS as rotas (para injetar req.csrfToken)
+// mas ignora validação para métodos seguros e rotas específicas
 app.use((req, res, next) => {
-    // Skip CSRF para métodos seguros
-    if (req.method === "GET" ||
-        req.method === "HEAD" ||
-        req.method === "OPTIONS") {
-        return next();
-    }
-    // Skip CSRF para rotas específicas
+    // Rotas que nunca precisam de CSRF (nem validação nem geração de token)
     const skipCsrfRoutes = ["/health", "/billing/webhook"];
     if (skipCsrfRoutes.includes(req.path)) {
         return next();
     }
-    // Aplica CSRF para todas as outras rotas
+    // Métodos seguros: apenas injeta req.csrfToken (não valida)
+    if (req.method === "GET" ||
+        req.method === "HEAD" ||
+        req.method === "OPTIONS") {
+        // Executa middleware mas ignora erro de validação
+        return csrfProtection(req, res, (err) => {
+            // Ignora erros em métodos seguros (apenas gera token)
+            next();
+        });
+    }
+    // POST/PUT/DELETE/PATCH: valida token obrigatório
     csrfProtection(req, res, next);
 });
 /**

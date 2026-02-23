@@ -112,9 +112,26 @@ class AuthController {
      * CSRF Token - GET /auth/csrf-token
      */
     getCsrfToken(req, res) {
-        res.json({
-            csrfToken: req.csrfToken(),
-        });
+        try {
+            // Gera token CSRF (csurf middleware injeta req.csrfToken em requisições GET)
+            const csrfToken = req.csrfToken ? req.csrfToken() : undefined;
+            if (!csrfToken) {
+                return res.status(500).json({
+                    error: "CSRF_TOKEN_ERROR",
+                    message: "Falha ao gerar token CSRF",
+                });
+            }
+            res.json({
+                csrfToken,
+            });
+        }
+        catch (error) {
+            console.error("Erro ao gerar CSRF token:", error);
+            res.status(500).json({
+                error: "CSRF_TOKEN_ERROR",
+                message: error.message,
+            });
+        }
     }
     async me(req, res) {
         try {
