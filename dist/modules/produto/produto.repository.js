@@ -5,16 +5,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProdutoRepository = void 0;
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
+/**
+ * Helper: Converte valor monetário de forma segura
+ * - Aceita números, strings com ponto ou vírgula decimal
+ * - Retorna null para valores inválidos ou vazios
+ * - Valida valores negativos
+ */
+function parseMoneyValue(value) {
+    // Se undefined, null ou string vazia, retorna null
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+    // Se já é número válido
+    if (typeof value === "number") {
+        return value >= 0 ? value : null;
+    }
+    // Se é string, limpa e converte
+    // Aceita vírgula ou ponto como separador decimal (mobile-friendly)
+    const cleaned = String(value).replace(",", ".").trim();
+    const parsed = parseFloat(cleaned);
+    // Valida resultado
+    if (isNaN(parsed) || parsed < 0) {
+        return null;
+    }
+    return parsed;
+}
+/**
+ * Helper: Converte número inteiro de forma segura
+ */
+function parseIntValue(value, defaultValue = 0) {
+    if (value === undefined || value === null || value === "") {
+        return defaultValue;
+    }
+    const parsed = parseInt(String(value));
+    return isNaN(parsed) ? defaultValue : Math.max(0, parsed);
+}
 class ProdutoRepository {
     async create(data) {
         const produtoData = {
             nome: data.nome,
             categoria: data.categoria,
             volume: data.volume,
-            estoqueAtual: Number(data.estoque_atual ?? data.estoqueAtual ?? 0),
-            estoqueMinimo: Number(data.estoque_minimo ?? data.estoqueMinimo ?? 5),
-            precoCompra: Number(data.preco_compra ?? data.precoCompra ?? 0),
-            precoVenda: Number(data.preco_venda ?? data.precoVenda ?? 0),
+            estoqueAtual: parseIntValue(data.estoque_atual ?? data.estoqueAtual, 0),
+            estoqueMinimo: parseIntValue(data.estoque_minimo ?? data.estoqueMinimo, 5),
+            precoCompra: parseMoneyValue(data.preco_compra ?? data.precoCompra),
+            precoVenda: parseMoneyValue(data.preco_venda ?? data.precoVenda),
             estabelecimentoId: data.estabelecimento_id ?? data.estabelecimentoId,
             status: data.status ?? "OK",
         };
@@ -75,12 +110,17 @@ class ProdutoRepository {
             nome: data.nome ?? produto.nome,
             categoria: data.categoria ?? produto.categoria,
             volume: data.volume ?? produto.volume,
-            estoqueAtual: Number(data.estoque_atual ?? data.estoqueAtual ?? produto.estoqueAtual),
-            estoqueMinimo: Number(data.estoque_minimo ?? data.estoqueMinimo ?? produto.estoqueMinimo),
-            precoCompra: Number(data.preco_compra ?? data.precoCompra ?? produto.precoCompra),
-            precoVenda: Number(data.preco_venda ?? data.precoVenda ?? produto.precoVenda),
+            estoqueAtual: parseIntValue(data.estoque_atual ?? data.estoqueAtual, produto.estoqueAtual),
+            estoqueMinimo: parseIntValue(data.estoque_minimo ?? data.estoqueMinimo, produto.estoqueMinimo),
             status: data.status ?? produto.status,
         };
+        // Preços: se vier no payload, converte; senão mantém o anterior
+        if (data.preco_compra !== undefined || data.precoCompra !== undefined) {
+            updateData.precoCompra = parseMoneyValue(data.preco_compra ?? data.precoCompra);
+        }
+        if (data.preco_venda !== undefined || data.precoVenda !== undefined) {
+            updateData.precoVenda = parseMoneyValue(data.preco_venda ?? data.precoVenda);
+        }
         const fornecedorId = data.fornecedor_id ?? data.fornecedorId;
         if (fornecedorId !== undefined) {
             if (fornecedorId && fornecedorId.trim() !== "") {

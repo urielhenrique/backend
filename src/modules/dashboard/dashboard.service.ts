@@ -27,6 +27,19 @@ export class DashboardService {
 
     const margemEstimada = valorTotalVenda - valorTotalCompra;
 
+    // 💰 RECEITA REAL: Soma dos valores das vendas (saídas) realizadas
+    const receitaVendas = await prisma.movimentacao.aggregate({
+      where: {
+        estabelecimentoId,
+        tipo: "Saida",
+      },
+      _sum: {
+        valorTotal: true,
+      },
+    });
+
+    const receitaRealVendas = receitaVendas._sum.valorTotal ?? 0;
+
     const vendas = await prisma.movimentacao.groupBy({
       by: ["produtoId"],
       where: {
@@ -67,6 +80,7 @@ export class DashboardService {
       valorTotalCompra,
       valorTotalVenda,
       margemEstimada,
+      receitaRealVendas, // 💰 Valor real que entrou no caixa (vendas)
       produtoMaisVendido,
       totalMovimentacoes,
     };

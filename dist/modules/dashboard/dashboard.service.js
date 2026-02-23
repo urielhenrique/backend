@@ -26,6 +26,17 @@ class DashboardService {
             return total + produto.estoqueAtual * (produto.precoVenda ?? 0);
         }, 0);
         const margemEstimada = valorTotalVenda - valorTotalCompra;
+        // 💰 RECEITA REAL: Soma dos valores das vendas (saídas) realizadas
+        const receitaVendas = await prisma_1.default.movimentacao.aggregate({
+            where: {
+                estabelecimentoId,
+                tipo: "Saida",
+            },
+            _sum: {
+                valorTotal: true,
+            },
+        });
+        const receitaRealVendas = receitaVendas._sum.valorTotal ?? 0;
         const vendas = await prisma_1.default.movimentacao.groupBy({
             by: ["produtoId"],
             where: {
@@ -61,6 +72,7 @@ class DashboardService {
             valorTotalCompra,
             valorTotalVenda,
             margemEstimada,
+            receitaRealVendas, // 💰 Valor real que entrou no caixa (vendas)
             produtoMaisVendido,
             totalMovimentacoes,
         };

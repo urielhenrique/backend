@@ -24,7 +24,11 @@ class MovimentacaoService {
             const tipoNormalizado = data.tipo
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
-            const quantidade = Number(data.quantidade);
+            // Valida quantidade
+            const quantidade = parseInt(String(data.quantidade));
+            if (isNaN(quantidade) || quantidade <= 0) {
+                throw new Error("Quantidade inválida");
+            }
             const produto = await tx.produto.findFirst({
                 where: {
                     id: data.produtoId,
@@ -59,7 +63,7 @@ class MovimentacaoService {
                 data: {
                     produtoId: produto.id,
                     estabelecimentoId,
-                    tipo: data.tipo,
+                    tipo: tipoNormalizado, // ✅ Usa tipo sem acento (enum do Prisma)
                     quantidade,
                     observacao: data.observacao,
                     valorUnitario,
