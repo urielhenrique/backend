@@ -19,34 +19,45 @@ class MovimentacaoService {
     }
     async create(estabelecimentoId, data) {
         console.log("🔍 Movimentacao Service - Dados recebidos:", data);
+        // Normaliza nomes de campos (snake_case → camelCase)
+        const produtoId = data.produto_id || data.produtoId;
+        const tipo = data.tipo;
+        const quantidade = data.quantidade;
+        const observacao = data.observacao;
         // Valida campos obrigatórios
-        if (!data.tipo) {
+        if (!tipo) {
             throw new Error("Tipo de movimentação é obrigatório");
         }
-        if (!data.produtoId) {
+        if (!produtoId) {
             throw new Error("Produto é obrigatório");
         }
-        if (!data.quantidade) {
+        if (!quantidade) {
             throw new Error("Quantidade é obrigatória");
         }
+        console.log("✅ Campos validados:", {
+            produtoId,
+            tipo,
+            quantidade,
+            observacao,
+        });
         // Valida limite de movimentações antes de criar
         await this.planoService.checkLimite(estabelecimentoId, "movimentacao");
         return prisma_1.default.$transaction(async (tx) => {
-            const tipoNormalizado = data.tipo
+            const tipoNormalizado = tipo
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
             console.log("📝 Tipo normalizado:", {
-                original: data.tipo,
+                original: tipo,
                 normalizado: tipoNormalizado,
             });
             // Valida quantidade
-            const quantidade = parseInt(String(data.quantidade));
-            if (isNaN(quantidade) || quantidade <= 0) {
+            const qtd = parseInt(String(quantidade));
+            if (isNaN(qtd) || qtd <= 0) {
                 throw new Error("Quantidade inválida");
             }
             const produto = await tx.produto.findFirst({
                 where: {
-                    id: data.produtoId,
+                    id: produtoId,
                     estabelecimentoId,
                 },
             });
@@ -55,18 +66,18 @@ class MovimentacaoService {
             }
             let novoEstoque = produto.estoqueAtual;
             if (tipoNormalizado === "Entrada") {
-                novoEstoque += quantidade;
+                novoEstoque += qtd;
             }
             if (tipoNormalizado === "Saida") {
-                if (produto.estoqueAtual < quantidade) {
+                if (produto.estoqueAtual < qtd) {
                     throw new Error("Estoque insuficiente");
                 }
-                novoEstoque -= quantidade;
+                novoEstoque -= qtd;
             }
             const novoStatus = this.calcularStatus(novoEstoque, produto.estoqueMinimo);
             // 🔥 NOVA LÓGICA FINANCEIRA
             const valorUnitario = tipoNormalizado === "Saida" ? produto.precoVenda : produto.precoCompra;
-            const valorTotal = quantidade * (valorUnitario ?? 0);
+            const valorTotal = qtd * (valorUnitario ?? 0);
             console.log("💰 Movimentação:", {
                 tipo: tipoNormalizado,
                 quantidade,
