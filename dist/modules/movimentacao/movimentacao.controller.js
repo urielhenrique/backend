@@ -6,10 +6,17 @@ const service = new movimentacao_service_1.MovimentacaoService();
 class MovimentacaoController {
     async create(req, res) {
         try {
+            console.log("📥 Recebendo movimentação:", {
+                body: req.body,
+                estabelecimentoId: req.user.estabelecimentoId,
+                usuario: req.user.userId,
+            });
             const result = await service.create(req.user.estabelecimentoId, req.body);
+            console.log("✅ Movimentação criada:", result.id);
             res.status(201).json(result);
         }
         catch (error) {
+            console.error("❌ Erro ao criar movimentação:", error.message);
             res.status(400).json({ error: error.message });
         }
     }

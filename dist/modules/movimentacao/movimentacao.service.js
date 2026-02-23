@@ -18,12 +18,27 @@ class MovimentacaoService {
         return "OK";
     }
     async create(estabelecimentoId, data) {
+        console.log("🔍 Movimentacao Service - Dados recebidos:", data);
+        // Valida campos obrigatórios
+        if (!data.tipo) {
+            throw new Error("Tipo de movimentação é obrigatório");
+        }
+        if (!data.produtoId) {
+            throw new Error("Produto é obrigatório");
+        }
+        if (!data.quantidade) {
+            throw new Error("Quantidade é obrigatória");
+        }
         // Valida limite de movimentações antes de criar
         await this.planoService.checkLimite(estabelecimentoId, "movimentacao");
         return prisma_1.default.$transaction(async (tx) => {
             const tipoNormalizado = data.tipo
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
+            console.log("📝 Tipo normalizado:", {
+                original: data.tipo,
+                normalizado: tipoNormalizado,
+            });
             // Valida quantidade
             const quantidade = parseInt(String(data.quantidade));
             if (isNaN(quantidade) || quantidade <= 0) {
