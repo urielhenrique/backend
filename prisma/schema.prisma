@@ -3,36 +3,34 @@ generator client {
   output   = "../node_modules/.prisma/client"
 }
 
-
 datasource db {
   provider = "postgresql"
 }
 
-
 model Estabelecimento {
-  id        String   @id @default(uuid())
-  nome      String
-  plano     Plano    @default(FREE)
-  ativo     Boolean  @default(true)
-  limiteProdutos Int  @default(50)
-  limiteUsuarios Int  @default(1)
+  id               String   @id @default(uuid())
+  nome             String
+  plano            Plano    @default(FREE)
+  ativo            Boolean  @default(true)
+  limiteProdutos   Int      @default(50)
+  limiteUsuarios   Int      @default(1)
   stripeCustomerId String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 
-  usuarios       Usuario[]
-  produtos       Produto[]
-  fornecedores   Fornecedor[]
-  movimentacoes  Movimentacao[]
-  subscriptions  Subscription[]
+  usuarios      Usuario[]
+  produtos      Produto[]
+  fornecedores  Fornecedor[]
+  movimentacoes Movimentacao[]
+  subscriptions Subscription[]
 }
 
 model Usuario {
-  id        String   @id @default(uuid())
+  id        String @id @default(uuid())
   nome      String
-  email     String   @unique
+  email     String @unique
   senhaHash String
-  role      Role     @default(FUNCIONARIO)
+  role      Role   @default(FUNCIONARIO)
 
   estabelecimentoId String
   estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
@@ -41,13 +39,13 @@ model Usuario {
 }
 
 model Produto {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   nome      String
   categoria Categoria
   volume    String?
 
-  estoqueAtual   Int    @default(0)
-  estoqueMinimo  Int    @default(5)
+  estoqueAtual  Int @default(0)
+  estoqueMinimo Int @default(5)
 
   precoCompra Float?
   precoVenda  Float?
@@ -63,20 +61,20 @@ model Produto {
   movimentacoes Movimentacao[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([estabelecimentoId])
   @@index([estabelecimentoId, createdAt])
 }
 
 model Movimentacao {
-  id        String   @id @default(uuid())
-  tipo      TipoMovimentacao
-  quantidade Int
-  data      DateTime @default(now())
-  observacao String?
-  valorUnitario      Float?
-  valorTotal         Float?
+  id            String           @id @default(uuid())
+  tipo          TipoMovimentacao
+  quantidade    Int
+  data          DateTime         @default(now())
+  observacao    String?
+  valorUnitario Float?
+  valorTotal    Float?
 
   produtoId String
   produto   Produto @relation(fields: [produtoId], references: [id])
@@ -93,10 +91,10 @@ model Movimentacao {
 }
 
 model Fornecedor {
-  id        String   @id @default(uuid())
-  nome      String
-  telefone  String?
-  prazoEntregaDias Int @default(2)
+  id               String  @id @default(uuid())
+  nome             String
+  telefone         String?
+  prazoEntregaDias Int     @default(2)
 
   estabelecimentoId String
   estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
@@ -141,20 +139,20 @@ enum Status {
 }
 
 model Subscription {
-  id                 String   @id @default(uuid())
-  stripeSubscriptionId String @unique
-  stripePriceId      String
-  status             SubscriptionStatus @default(active)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd  Boolean  @default(false)
-  
-  estabelecimentoId  String
-  estabelecimento    Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Cascade)
-  
+  id                   String             @id @default(uuid())
+  stripeSubscriptionId String             @unique
+  stripePriceId        String
+  status               SubscriptionStatus @default(active)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+
+  estabelecimentoId String
+  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  updatedAt DateTime @default(now()) @updatedAt
+
   @@index([estabelecimentoId])
   @@index([stripeSubscriptionId])
 }
