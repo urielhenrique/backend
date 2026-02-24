@@ -157,6 +157,14 @@ model Subscription {
   @@index([stripeSubscriptionId])
 }
 
+model StripeWebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique
+  type        String
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+}
+
 enum SubscriptionStatus {
   active
   canceled

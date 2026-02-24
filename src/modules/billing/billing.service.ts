@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { Prisma } from "@prisma/client";
 import prisma from "../../shared/database/prisma";
 import emailService from "../../shared/services/email.service";
 
@@ -116,40 +117,72 @@ export class BillingService {
       throw new Error(`Webhook signature verification failed: ${err.message}`);
     }
 
-    // Processar eventos
-    switch (event.type) {
-      case "checkout.session.completed":
-        await this.handleCheckoutCompleted(
-          event.data.object as Stripe.Checkout.Session,
-        );
-        break;
-
-      case "customer.subscription.created":
-      case "customer.subscription.updated":
-        await this.handleSubscriptionUpdate(
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-
-      case "customer.subscription.deleted":
-        await this.handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-
-      case "invoice.payment_succeeded":
-        console.log("Pagamento bem-sucedido:", event.data.object);
-        break;
-
-      case "invoice.payment_failed":
-        await this.handlePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
-
-      default:
-        console.log(`Evento não tratado: ${event.type}`);
+    // Idempotencia: ignora eventos ja processados
+    try {
+      await prisma.stripeWebhookEvent.create({
+        data: {
+          eventId: event.id,
+          type: event.type,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return { received: true, duplicate: true };
+      }
+      throw error;
     }
 
-    return { received: true };
+    try {
+      // Processar eventos
+      switch (event.type) {
+        case "checkout.session.completed":
+          await this.handleCheckoutCompleted(
+            event.data.object as Stripe.Checkout.Session,
+          );
+          break;
+
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
+          await this.handleSubscriptionUpdate(
+            event.data.object as Stripe.Subscription,
+          );
+          break;
+
+        case "customer.subscription.deleted":
+          await this.handleSubscriptionDeleted(
+            event.data.object as Stripe.Subscription,
+          );
+          break;
+
+        case "invoice.payment_succeeded": {
+          const invoice = event.data.object as Stripe.Invoice;
+          console.log(`Pagamento bem-sucedido: ${invoice.id}`);
+          break;
+        }
+
+        case "invoice.payment_failed":
+          await this.handlePaymentFailed(event.data.object as Stripe.Invoice);
+          break;
+
+        default:
+          console.log(`Evento não tratado: ${event.type}`);
+      }
+
+      await prisma.stripeWebhookEvent.update({
+        where: { eventId: event.id },
+        data: { processedAt: new Date() },
+      });
+
+      return { received: true };
+    } catch (error) {
+      await prisma.stripeWebhookEvent.delete({
+        where: { eventId: event.id },
+      });
+      throw error;
+    }
   }
 
   /**

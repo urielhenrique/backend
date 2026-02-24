@@ -37,7 +37,7 @@ export class EmailService {
   async sendUpgradeConfirmation(
     email: string,
     estabelecimentoNome: string,
-    preco: string = "R$ 49,90/mês",
+    preco: string = "R$ 29,90/mês",
   ) {
     this.ensureEmailConfigured();
 
