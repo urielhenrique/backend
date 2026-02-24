@@ -176,7 +176,19 @@ app.use((req, res, next) => {
  */
 app.use(securityHeaders);
 app.use(preventParameterPollution);
-app.use(apiLimiter);
+app.use((req, res, next) => {
+  const skipRateLimitPaths = [
+    "/auth/csrf-token",
+    "/auth/login",
+    "/auth/google",
+  ];
+
+  if (skipRateLimitPaths.includes(req.path)) {
+    return next();
+  }
+
+  return apiLimiter(req, res, next);
+});
 
 /**
  * ==========================================
