@@ -39,4 +39,12 @@ router.get("/subscription", authMiddleware, (req, res) =>
   controller.getSubscription(req, res),
 );
 
+/**
+ * POST /billing/report
+ * Gerar e enviar relatório de uso mensal
+ */
+router.post("/report", authMiddleware, (req, res) =>
+  controller.sendUsageReport(req, res),
+);
+
 export default router;

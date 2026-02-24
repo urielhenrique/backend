@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import prisma from "../../shared/database/prisma";
+import emailService from "../../shared/services/email.service";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -19,7 +20,9 @@ export class BillingService {
    */
   private ensureStripeConfigured(): void {
     if (!stripe) {
-      throw new Error("STRIPE_SECRET_KEY não configurado. Configure as variáveis de ambiente do Stripe.");
+      throw new Error(
+        "STRIPE_SECRET_KEY não configurado. Configure as variáveis de ambiente do Stripe.",
+      );
     }
   }
 
@@ -28,7 +31,7 @@ export class BillingService {
    */
   async createCheckoutSession(estabelecimentoId: string, userEmail: string) {
     this.ensureStripeConfigured();
-    
+
     if (!STRIPE_PRICE_ID) {
       throw new Error("STRIPE_PRICE_ID não configurado");
     }
@@ -96,7 +99,7 @@ export class BillingService {
    */
   async handleWebhook(body: Buffer, signature: string) {
     this.ensureStripeConfigured();
-    
+
     if (!STRIPE_WEBHOOK_SECRET) {
       throw new Error("STRIPE_WEBHOOK_SECRET não configurado");
     }
@@ -180,6 +183,7 @@ export class BillingService {
     // Buscar estabelecimento pelo customer ID
     const estabelecimento = await prisma.estabelecimento.findUnique({
       where: { stripeCustomerId: customerId },
+      include: { usuarios: true },
     });
 
     if (!estabelecimento) {
@@ -190,7 +194,7 @@ export class BillingService {
     }
 
     // Criar ou atualizar subscription
-    await prisma.subscription.upsert({
+    const subData = await prisma.subscription.upsert({
       where: { stripeSubscriptionId: subscription.id },
       create: {
         stripeSubscriptionId: subscription.id,
@@ -218,6 +222,19 @@ export class BillingService {
         where: { id: estabelecimento.id },
         data: { plano: "PRO" },
       });
+
+      // Enviar email de confirmação de upgrade
+      if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
+        const adminEmail = estabelecimento.usuarios[0].email;
+        await emailService.sendUpgradeConfirmation(
+          adminEmail,
+          estabelecimento.nome,
+        );
+      }
+
+      console.log(
+        `✅ Subscription ativada e email enviado para ${estabelecimento.nome}`,
+      );
     }
   }
 
@@ -229,6 +246,7 @@ export class BillingService {
 
     const estabelecimento = await prisma.estabelecimento.findUnique({
       where: { stripeCustomerId: customerId },
+      include: { usuarios: true },
     });
 
     if (!estabelecimento) {
@@ -247,7 +265,22 @@ export class BillingService {
       data: { status: "canceled" },
     });
 
-    console.log(`Estabelecimento ${estabelecimento.id} downgrade para FREE`);
+    // Enviar email de notificação de downgrade
+    if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
+      const adminEmail = estabelecimento.usuarios[0].email;
+      const motivo = subscription.cancellation_details?.reason
+        ? `Motivo: ${subscription.cancellation_details.reason}`
+        : "Assinatura encerrada";
+      await emailService.sendDowngradeNotification(
+        adminEmail,
+        estabelecimento.nome,
+        motivo,
+      );
+    }
+
+    console.log(
+      `⚠️ Estabelecimento ${estabelecimento.id} downgrade para FREE e email enviado`,
+    );
   }
 
   /**
@@ -265,7 +298,7 @@ export class BillingService {
    */
   async createPortalSession(estabelecimentoId: string) {
     this.ensureStripeConfigured();
-    
+
     const estabelecimento = await prisma.estabelecimento.findUnique({
       where: { id: estabelecimentoId },
     });
@@ -302,6 +335,60 @@ export class BillingService {
       status: subscription.status,
       currentPeriodEnd: subscription.currentPeriodEnd,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    };
+  }
+
+  /**
+   * Gerar e enviar relatório de uso mensal
+   */
+  async generateAndSendUsageReport(estabelecimentoId: string) {
+    const estabelecimento = await prisma.estabelecimento.findUnique({
+      where: { id: estabelecimentoId },
+      include: { usuarios: true },
+    });
+
+    if (!estabelecimento) {
+      throw new Error("Estabelecimento não encontrado");
+    }
+
+    // Contar produtos
+    const produtos = await prisma.produto.count({
+      where: { estabelecimentoId },
+    });
+
+    // Contar usuários
+    const usuarios = await prisma.usuario.count({
+      where: { estabelecimentoId },
+    });
+
+    // Contar movimentações do mês
+    const agora = new Date();
+    const inicioDomes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimDomes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
+
+    const movimentacoes = await prisma.movimentacao.count({
+      where: {
+        estabelecimentoId,
+        createdAt: { gte: inicioDomes, lte: fimDomes },
+      },
+    });
+
+    // Enviar relatório por email
+    if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
+      const adminEmail = estabelecimento.usuarios[0].email;
+      await emailService.sendUsageReport(adminEmail, estabelecimento.nome, {
+        produtos,
+        usuarios,
+        movimentacoes,
+        plano: estabelecimento.plano,
+      });
+    }
+
+    return {
+      produtos,
+      usuarios,
+      movimentacoes,
+      plano: estabelecimento.plano,
     };
   }
 }

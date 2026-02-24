@@ -96,4 +96,26 @@ export class BillingController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  /**
+   * POST /billing/report
+   * Gerar e enviar relatório de uso mensal
+   */
+  async sendUsageReport(req: AuthRequest, res: Response) {
+    try {
+      const { estabelecimentoId } = req.user!;
+
+      const report =
+        await billingService.generateAndSendUsageReport(estabelecimentoId);
+
+      res.json({
+        success: true,
+        message: "Relatório enviado por email com sucesso",
+        data: report,
+      });
+    } catch (error: any) {
+      console.error("Erro ao enviar relatório:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }
