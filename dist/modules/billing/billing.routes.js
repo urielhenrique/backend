@@ -30,9 +30,4 @@ router.get("/portal", auth_middleware_1.authMiddleware, (req, res) => controller
  * Informações da assinatura atual
  */
 router.get("/subscription", auth_middleware_1.authMiddleware, (req, res) => controller.getSubscription(req, res));
-/**
- * POST /billing/report
- * Gerar e enviar relatório de uso mensal
- */
-router.post("/report", auth_middleware_1.authMiddleware, (req, res) => controller.sendUsageReport(req, res));
 exports.default = router;

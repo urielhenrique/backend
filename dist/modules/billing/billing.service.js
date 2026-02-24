@@ -5,9 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BillingService = void 0;
 const stripe_1 = __importDefault(require("stripe"));
-const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
-const email_service_1 = __importDefault(require("../../shared/services/email.service"));
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID;
@@ -99,58 +97,28 @@ class BillingService {
         catch (err) {
             throw new Error(`Webhook signature verification failed: ${err.message}`);
         }
-        // Idempotencia: ignora eventos ja processados
-        try {
-            await prisma_1.default.stripeWebhookEvent.create({
-                data: {
-                    eventId: event.id,
-                    type: event.type,
-                },
-            });
+        // Processar eventos
+        switch (event.type) {
+            case "checkout.session.completed":
+                await this.handleCheckoutCompleted(event.data.object);
+                break;
+            case "customer.subscription.created":
+            case "customer.subscription.updated":
+                await this.handleSubscriptionUpdate(event.data.object);
+                break;
+            case "customer.subscription.deleted":
+                await this.handleSubscriptionDeleted(event.data.object);
+                break;
+            case "invoice.payment_succeeded":
+                console.log("Pagamento bem-sucedido:", event.data.object);
+                break;
+            case "invoice.payment_failed":
+                await this.handlePaymentFailed(event.data.object);
+                break;
+            default:
+                console.log(`Evento não tratado: ${event.type}`);
         }
-        catch (error) {
-            if (error instanceof client_1.Prisma.PrismaClientKnownRequestError &&
-                error.code === "P2002") {
-                return { received: true, duplicate: true };
-            }
-            throw error;
-        }
-        try {
-            // Processar eventos
-            switch (event.type) {
-                case "checkout.session.completed":
-                    await this.handleCheckoutCompleted(event.data.object);
-                    break;
-                case "customer.subscription.created":
-                case "customer.subscription.updated":
-                    await this.handleSubscriptionUpdate(event.data.object);
-                    break;
-                case "customer.subscription.deleted":
-                    await this.handleSubscriptionDeleted(event.data.object);
-                    break;
-                case "invoice.payment_succeeded": {
-                    const invoice = event.data.object;
-                    console.log(`Pagamento bem-sucedido: ${invoice.id}`);
-                    break;
-                }
-                case "invoice.payment_failed":
-                    await this.handlePaymentFailed(event.data.object);
-                    break;
-                default:
-                    console.log(`Evento não tratado: ${event.type}`);
-            }
-            await prisma_1.default.stripeWebhookEvent.update({
-                where: { eventId: event.id },
-                data: { processedAt: new Date() },
-            });
-            return { received: true };
-        }
-        catch (error) {
-            await prisma_1.default.stripeWebhookEvent.delete({
-                where: { eventId: event.id },
-            });
-            throw error;
-        }
+        return { received: true };
     }
     /**
      * Atualizar plano para PRO após checkout
@@ -178,14 +146,13 @@ class BillingService {
         // Buscar estabelecimento pelo customer ID
         const estabelecimento = await prisma_1.default.estabelecimento.findUnique({
             where: { stripeCustomerId: customerId },
-            include: { usuarios: true },
         });
         if (!estabelecimento) {
             console.error(`Estabelecimento não encontrado para customer ${customerId}`);
             return;
         }
         // Criar ou atualizar subscription
-        const subData = await prisma_1.default.subscription.upsert({
+        await prisma_1.default.subscription.upsert({
             where: { stripeSubscriptionId: subscription.id },
             create: {
                 stripeSubscriptionId: subscription.id,
@@ -210,12 +177,6 @@ class BillingService {
                 where: { id: estabelecimento.id },
                 data: { plano: "PRO" },
             });
-            // Enviar email de confirmação de upgrade
-            if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
-                const adminEmail = estabelecimento.usuarios[0].email;
-                await email_service_1.default.sendUpgradeConfirmation(adminEmail, estabelecimento.nome);
-            }
-            console.log(`✅ Subscription ativada e email enviado para ${estabelecimento.nome}`);
         }
     }
     /**
@@ -225,7 +186,6 @@ class BillingService {
         const customerId = subscription.customer;
         const estabelecimento = await prisma_1.default.estabelecimento.findUnique({
             where: { stripeCustomerId: customerId },
-            include: { usuarios: true },
         });
         if (!estabelecimento) {
             return;
@@ -240,15 +200,7 @@ class BillingService {
             where: { stripeSubscriptionId: subscription.id },
             data: { status: "canceled" },
         });
-        // Enviar email de notificação de downgrade
-        if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
-            const adminEmail = estabelecimento.usuarios[0].email;
-            const motivo = subscription.cancellation_details?.reason
-                ? `Motivo: ${subscription.cancellation_details.reason}`
-                : "Assinatura encerrada";
-            await email_service_1.default.sendDowngradeNotification(adminEmail, estabelecimento.nome, motivo);
-        }
-        console.log(`⚠️ Estabelecimento ${estabelecimento.id} downgrade para FREE e email enviado`);
+        console.log(`Estabelecimento ${estabelecimento.id} downgrade para FREE`);
     }
     /**
      * Lidar com falha no pagamento
@@ -293,52 +245,6 @@ class BillingService {
             status: subscription.status,
             currentPeriodEnd: subscription.currentPeriodEnd,
             cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-        };
-    }
-    /**
-     * Gerar e enviar relatório de uso mensal
-     */
-    async generateAndSendUsageReport(estabelecimentoId) {
-        const estabelecimento = await prisma_1.default.estabelecimento.findUnique({
-            where: { id: estabelecimentoId },
-            include: { usuarios: true },
-        });
-        if (!estabelecimento) {
-            throw new Error("Estabelecimento não encontrado");
-        }
-        // Contar produtos
-        const produtos = await prisma_1.default.produto.count({
-            where: { estabelecimentoId },
-        });
-        // Contar usuários
-        const usuarios = await prisma_1.default.usuario.count({
-            where: { estabelecimentoId },
-        });
-        // Contar movimentações do mês
-        const agora = new Date();
-        const inicioDomes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-        const fimDomes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
-        const movimentacoes = await prisma_1.default.movimentacao.count({
-            where: {
-                estabelecimentoId,
-                createdAt: { gte: inicioDomes, lte: fimDomes },
-            },
-        });
-        // Enviar relatório por email
-        if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {
-            const adminEmail = estabelecimento.usuarios[0].email;
-            await email_service_1.default.sendUsageReport(adminEmail, estabelecimento.nome, {
-                produtos,
-                usuarios,
-                movimentacoes,
-                plano: estabelecimento.plano,
-            });
-        }
-        return {
-            produtos,
-            usuarios,
-            movimentacoes,
-            plano: estabelecimento.plano,
         };
     }
 }

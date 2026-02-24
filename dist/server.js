@@ -152,17 +152,7 @@ app.use((req, res, next) => {
  */
 app.use(security_middleware_1.securityHeaders);
 app.use(security_middleware_1.preventParameterPollution);
-app.use((req, res, next) => {
-    const skipRateLimitPaths = [
-        "/auth/csrf-token",
-        "/auth/login",
-        "/auth/google",
-    ];
-    if (skipRateLimitPaths.includes(req.path)) {
-        return next();
-    }
-    return (0, security_middleware_1.apiLimiter)(req, res, next);
-});
+app.use(security_middleware_1.apiLimiter);
 /**
  * ==========================================
  * LOG MIDDLEWARE (apenas em development)
