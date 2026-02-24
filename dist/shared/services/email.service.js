@@ -34,7 +34,7 @@ class EmailService {
     /**
      * Enviar email de confirmação de upgrade
      */
-    async sendUpgradeConfirmation(email, estabelecimentoNome, preco = "R$ 49,90/mês") {
+    async sendUpgradeConfirmation(email, estabelecimentoNome, preco = "R$ 29,90/mês") {
         this.ensureEmailConfigured();
         if (!transporter) {
             console.log(`📧 [SIMULADO] Email de confirmação enviado para ${email}`);
