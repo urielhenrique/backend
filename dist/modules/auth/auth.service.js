@@ -125,9 +125,9 @@ class AuthService {
                 name: user.nome,
                 email: user.email,
                 role: user.role,
-                estabelecimento_id: user.estabelecimentoId,
-                estabelecimento_nome: user.estabelecimento.nome,
-                plano: user.estabelecimento.plano,
+                estabelecimento_id: user.estabelecimentoId || null,
+                estabelecimento_nome: user.estabelecimento?.nome || null,
+                plano: user.estabelecimento?.plano || null,
             },
         };
     }
@@ -221,9 +221,9 @@ class AuthService {
                     name: user.nome,
                     email: user.email,
                     role: user.role,
-                    estabelecimento_id: user.estabelecimentoId,
-                    estabelecimento_nome: user.estabelecimento.nome,
-                    plano: user.estabelecimento.plano,
+                    estabelecimento_id: user.estabelecimentoId || null,
+                    estabelecimento_nome: user.estabelecimento?.nome || null,
+                    plano: user.estabelecimento?.plano || null,
                 },
             };
         }

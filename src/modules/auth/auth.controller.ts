@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import prisma from "../../shared/database/prisma";
 import { AuthRequest } from "../../shared/middlewares/auth.middleware";
+import systemEventService from "../../shared/services/systemEvent.service";
 import {
   ACCESS_TOKEN_COOKIE_OPTIONS,
   REFRESH_TOKEN_COOKIE_OPTIONS,
@@ -80,6 +81,16 @@ export class AuthController {
       // Define cookies httpOnly
       this.setAuthCookies(res, result.token, result.refreshToken);
 
+      // Log login event
+      await systemEventService.logEvent({
+        eventType: "login",
+        userId: result.user.id,
+        estabelecimentoId: result.user.estabelecimento_id,
+        metadata: {
+          action: "user_login",
+        },
+      });
+
       // Retorna dados do usuário sem tokens
       res.json({
         user: result.user,
@@ -113,6 +124,16 @@ export class AuthController {
 
       // Define cookies httpOnly
       this.setAuthCookies(res, result.token, result.refreshToken);
+
+      // Log login event
+      await systemEventService.logEvent({
+        eventType: "login",
+        userId: result.user.id,
+        estabelecimentoId: result.user.estabelecimento_id,
+        metadata: {
+          action: "google_login",
+        },
+      });
 
       // Retorna dados do usuário sem tokens
       res.json({
@@ -189,14 +210,15 @@ export class AuthController {
         });
       }
 
+      // Admin de sistema pode não ter estabelecimento
       res.json({
         id: user.id,
         name: user.nome,
         email: user.email,
         role: user.role,
-        estabelecimento_id: user.estabelecimentoId,
-        estabelecimento_nome: user.estabelecimento.nome,
-        plano: user.estabelecimento.plano,
+        estabelecimento_id: user.estabelecimentoId || null,
+        estabelecimento_nome: user.estabelecimento?.nome || null,
+        plano: user.estabelecimento?.plano || null,
       });
     } catch (error: any) {
       res.status(500).json({

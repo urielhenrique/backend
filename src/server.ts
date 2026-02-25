@@ -1,6 +1,10 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+
+// Load .env and .env.local (local overrides global)
+dotenv.config();
+dotenv.config({ path: ".env.local" });
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import csrf from "csurf";
@@ -15,6 +19,7 @@ import planoRoutes from "./modules/plano/plano.routes";
 import seedRoutes from "./modules/seed/seed.routes";
 import adminRoutes from "./modules/admin/admin.routes";
 import billingRoutes from "./modules/billing/billing.routes";
+import monitoringRoutes from "./modules/monitoring/monitoring.routes";
 import {
   securityHeaders,
   apiLimiter,
@@ -230,6 +235,7 @@ app.use("/plano", planoRoutes);
 app.use("/seed", seedRoutes);
 app.use("/admin", adminRoutes);
 app.use("/billing", billingRoutes);
+app.use("/internal/monitoring", monitoringRoutes);
 
 /**
  * ==========================================

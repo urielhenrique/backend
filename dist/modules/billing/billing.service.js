@@ -8,6 +8,7 @@ const stripe_1 = __importDefault(require("stripe"));
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
 const email_service_1 = __importDefault(require("../../shared/services/email.service"));
+const systemEvent_service_1 = __importDefault(require("../../shared/services/systemEvent.service"));
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID;
@@ -162,10 +163,26 @@ class BillingService {
             return;
         }
         // Atualizar plano para PRO
+        const estabelecimento = await prisma_1.default.estabelecimento.findUnique({
+            where: { id: estabelecimentoId },
+            include: { usuarios: true },
+        });
         await prisma_1.default.estabelecimento.update({
             where: { id: estabelecimentoId },
             data: {
                 plano: "PRO",
+            },
+        });
+        // Log upgrade event
+        const adminUserId = estabelecimento?.usuarios?.[0]?.id;
+        await systemEvent_service_1.default.logEvent({
+            eventType: "upgrade",
+            userId: adminUserId,
+            estabelecimentoId: estabelecimentoId,
+            metadata: {
+                action: "plan_upgrade_to_pro",
+                planBefore: "FREE",
+                planAfter: "PRO",
             },
         });
         console.log(`Estabelecimento ${estabelecimentoId} atualizado para PRO`);
@@ -239,6 +256,18 @@ class BillingService {
         await prisma_1.default.subscription.update({
             where: { stripeSubscriptionId: subscription.id },
             data: { status: "canceled" },
+        });
+        // Log downgrade event
+        const adminUserId = estabelecimento.usuarios?.[0]?.id;
+        await systemEvent_service_1.default.logEvent({
+            eventType: "downgrade",
+            userId: adminUserId,
+            estabelecimentoId: estabelecimento.id,
+            metadata: {
+                action: "plan_downgrade_to_free",
+                planBefore: "PRO",
+                planAfter: "FREE",
+            },
         });
         // Enviar email de notificação de downgrade
         if (estabelecimento.usuarios && estabelecimento.usuarios.length > 0) {

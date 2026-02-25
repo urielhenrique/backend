@@ -42,7 +42,6 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../database/prisma"));
 const cookie_config_1 = require("../utils/cookie.config");
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
-const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
 /**
  * Middleware de autenticação básica
  * Verifica JWT token do cookie httpOnly
@@ -113,6 +112,8 @@ const requireSystemAdmin = async (req, res, next) => {
                 message: "Usuário não encontrado",
             });
         }
+        // Lê MY_ADMIN_EMAIL em tempo de execução (não em tempo de carregamento)
+        const MY_ADMIN_EMAIL = process.env.MY_ADMIN_EMAIL;
         // Verifica se é o admin do sistema via email
         const isSystemAdmin = MY_ADMIN_EMAIL && user.email === MY_ADMIN_EMAIL;
         if (!isSystemAdmin) {

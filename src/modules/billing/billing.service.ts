@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import prisma from "../../shared/database/prisma";
 import emailService from "../../shared/services/email.service";
+import systemEventService from "../../shared/services/systemEvent.service";
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
@@ -197,10 +198,28 @@ export class BillingService {
     }
 
     // Atualizar plano para PRO
+    const estabelecimento = await prisma.estabelecimento.findUnique({
+      where: { id: estabelecimentoId },
+      include: { usuarios: true },
+    });
+
     await prisma.estabelecimento.update({
       where: { id: estabelecimentoId },
       data: {
         plano: "PRO",
+      },
+    });
+
+    // Log upgrade event
+    const adminUserId = estabelecimento?.usuarios?.[0]?.id;
+    await systemEventService.logEvent({
+      eventType: "upgrade",
+      userId: adminUserId,
+      estabelecimentoId: estabelecimentoId,
+      metadata: {
+        action: "plan_upgrade_to_pro",
+        planBefore: "FREE",
+        planAfter: "PRO",
       },
     });
 
@@ -296,6 +315,19 @@ export class BillingService {
     await prisma.subscription.update({
       where: { stripeSubscriptionId: subscription.id },
       data: { status: "canceled" },
+    });
+
+    // Log downgrade event
+    const adminUserId = estabelecimento.usuarios?.[0]?.id;
+    await systemEventService.logEvent({
+      eventType: "downgrade",
+      userId: adminUserId,
+      estabelecimentoId: estabelecimento.id,
+      metadata: {
+        action: "plan_downgrade_to_free",
+        planBefore: "PRO",
+        planAfter: "FREE",
+      },
     });
 
     // Enviar email de notificação de downgrade

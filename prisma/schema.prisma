@@ -32,8 +32,8 @@ model Usuario {
   senhaHash String
   role      Role   @default(FUNCIONARIO)
 
-  estabelecimentoId String
-  estabelecimento   Estabelecimento @relation(fields: [estabelecimentoId], references: [id])
+  estabelecimentoId String?
+  estabelecimento   Estabelecimento? @relation(fields: [estabelecimentoId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -165,6 +165,29 @@ model StripeWebhookEvent {
   type        String
   receivedAt  DateTime @default(now())
   processedAt DateTime?
+}
+
+model SystemEvent {
+  id                String       @id @default(uuid())
+  eventType         EventType
+  metadata          Json?        // Non-sensitive data only
+  userId            String?
+  estabelecimentoId String?
+  createdAt         DateTime     @default(now())
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([estabelecimentoId])
+  @@index([createdAt, eventType])
+}
+
+enum EventType {
+  login
+  upgrade
+  downgrade
+  free_limit_block
+  stripe_webhook_error
+  internal_error
 }
 
 enum SubscriptionStatus {

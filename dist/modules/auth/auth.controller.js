@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const auth_service_1 = require("./auth.service");
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
+const systemEvent_service_1 = __importDefault(require("../../shared/services/systemEvent.service"));
 const cookie_config_1 = require("../../shared/utils/cookie.config");
 const authService = new auth_service_1.AuthService();
 class AuthController {
@@ -58,6 +59,15 @@ class AuthController {
             const result = await authService.login(email, password);
             // Define cookies httpOnly
             this.setAuthCookies(res, result.token, result.refreshToken);
+            // Log login event
+            await systemEvent_service_1.default.logEvent({
+                eventType: "login",
+                userId: result.user.id,
+                estabelecimentoId: result.user.estabelecimento_id,
+                metadata: {
+                    action: "user_login",
+                },
+            });
             // Retorna dados do usuário sem tokens
             res.json({
                 user: result.user,
@@ -87,6 +97,15 @@ class AuthController {
             const result = await authService.googleAuth(token);
             // Define cookies httpOnly
             this.setAuthCookies(res, result.token, result.refreshToken);
+            // Log login event
+            await systemEvent_service_1.default.logEvent({
+                eventType: "login",
+                userId: result.user.id,
+                estabelecimentoId: result.user.estabelecimento_id,
+                metadata: {
+                    action: "google_login",
+                },
+            });
             // Retorna dados do usuário sem tokens
             res.json({
                 user: result.user,
@@ -156,14 +175,15 @@ class AuthController {
                     message: "Usuário não encontrado",
                 });
             }
+            // Admin de sistema pode não ter estabelecimento
             res.json({
                 id: user.id,
                 name: user.nome,
                 email: user.email,
                 role: user.role,
-                estabelecimento_id: user.estabelecimentoId,
-                estabelecimento_nome: user.estabelecimento.nome,
-                plano: user.estabelecimento.plano,
+                estabelecimento_id: user.estabelecimentoId || null,
+                estabelecimento_nome: user.estabelecimento?.nome || null,
+                plano: user.estabelecimento?.plano || null,
             });
         }
         catch (error) {

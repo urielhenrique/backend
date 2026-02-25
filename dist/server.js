@@ -3,9 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv/config");
+const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+// Load .env and .env.local (local overrides global)
+dotenv_1.default.config();
+dotenv_1.default.config({ path: ".env.local" });
 const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const csurf_1 = __importDefault(require("csurf"));
@@ -19,6 +22,7 @@ const plano_routes_1 = __importDefault(require("./modules/plano/plano.routes"));
 const seed_routes_1 = __importDefault(require("./modules/seed/seed.routes"));
 const admin_routes_1 = __importDefault(require("./modules/admin/admin.routes"));
 const billing_routes_1 = __importDefault(require("./modules/billing/billing.routes"));
+const monitoring_routes_1 = __importDefault(require("./modules/monitoring/monitoring.routes"));
 const security_middleware_1 = require("./shared/middlewares/security.middleware");
 const app = (0, express_1.default)();
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -201,6 +205,7 @@ app.use("/plano", plano_routes_1.default);
 app.use("/seed", seed_routes_1.default);
 app.use("/admin", admin_routes_1.default);
 app.use("/billing", billing_routes_1.default);
+app.use("/internal/monitoring", monitoring_routes_1.default);
 /**
  * ==========================================
  * 404 HANDLER
