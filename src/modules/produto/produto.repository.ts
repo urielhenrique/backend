@@ -2,20 +2,31 @@ import prisma from "../../shared/database/prisma";
 import { Produto } from "@prisma/client";
 
 /**
+ * Helper: Normaliza categoria removendo acentos
+ */
+function normalizarCategoria(categoria: string): string {
+  const map: { [key: string]: string } = {
+    Água: "Agua",
+    Energético: "Energetico",
+  };
+  return map[categoria] || categoria;
+}
+
+/**
  * Helper: Converte valor monetário de forma segura
  * - Aceita números, strings com ponto ou vírgula decimal
- * - Retorna null para valores inválidos ou vazios
+ * - Retorna 0 para valores inválidos ou vazios
  * - Valida valores negativos
  */
-function parseMoneyValue(value: any): number | null {
-  // Se undefined, null ou string vazia, retorna null
+function parseMoneyValue(value: any): number {
+  // Se undefined, null ou string vazia, retorna 0
   if (value === undefined || value === null || value === "") {
-    return null;
+    return 0;
   }
 
   // Se já é número válido
   if (typeof value === "number") {
-    return value >= 0 ? value : null;
+    return value >= 0 ? value : 0;
   }
 
   // Se é string, limpa e converte
@@ -25,7 +36,7 @@ function parseMoneyValue(value: any): number | null {
 
   // Valida resultado
   if (isNaN(parsed) || parsed < 0) {
-    return null;
+    return 0;
   }
 
   return parsed;
@@ -47,7 +58,7 @@ export class ProdutoRepository {
   async create(data: any): Promise<Produto> {
     const produtoData: any = {
       nome: data.nome,
-      categoria: data.categoria,
+      categoria: normalizarCategoria(data.categoria),
       volume: data.volume,
       estoqueAtual: parseIntValue(data.estoque_atual ?? data.estoqueAtual, 0),
       estoqueMinimo: parseIntValue(
@@ -127,7 +138,9 @@ export class ProdutoRepository {
 
     const updateData: any = {
       nome: data.nome ?? produto.nome,
-      categoria: data.categoria ?? produto.categoria,
+      categoria: data.categoria
+        ? normalizarCategoria(data.categoria)
+        : produto.categoria,
       volume: data.volume ?? produto.volume,
       estoqueAtual: parseIntValue(
         data.estoque_atual ?? data.estoqueAtual,

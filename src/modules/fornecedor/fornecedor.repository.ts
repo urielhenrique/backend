@@ -38,7 +38,9 @@ export class FornecedorRepository {
     return prisma.fornecedor.create({
       data: {
         nome: data.nome,
-        telefone: data.telefone,
+        telefone: data.telefone || null,
+        cnpj: data.cnpj || null,
+        email: data.email || null,
         prazoEntregaDias: Number(
           data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2,
         ),
@@ -48,9 +50,20 @@ export class FornecedorRepository {
   }
 
   async update(id: string, estabelecimentoId: string, data: any) {
+    // Filtra apenas campos válidos para atualização
+    const updateData: any = {
+      nome: data.nome,
+      telefone: data.telefone || null,
+      cnpj: data.cnpj || null,
+      email: data.email || null,
+      prazoEntregaDias: Number(
+        data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2,
+      ),
+    };
+
     return prisma.fornecedor.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

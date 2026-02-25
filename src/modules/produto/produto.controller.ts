@@ -14,7 +14,17 @@ export class ProdutoController {
 
       res.status(201).json(produto);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error("[ProdutoController.create] Erro:", {
+        message: error.message,
+        code: error.code,
+        meta: error.meta,
+        body: req.body,
+      });
+
+      res.status(400).json({
+        error: error.message,
+        details: error.meta?.cause || error.meta?.message,
+      });
     }
   }
 
@@ -66,7 +76,16 @@ export class ProdutoController {
       );
       res.json(produto);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error("[ProdutoController.update] Erro:", {
+        message: error.message,
+        code: error.code,
+        meta: error.meta,
+      });
+
+      res.status(400).json({
+        error: error.message,
+        details: error.meta?.cause || error.meta?.message,
+      });
     }
   }
 

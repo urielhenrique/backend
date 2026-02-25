@@ -47,8 +47,8 @@ model Produto {
   estoqueAtual  Int @default(0)
   estoqueMinimo Int @default(5)
 
-  precoCompra Float?
-  precoVenda  Float?
+  precoCompra Float @default(0)
+  precoVenda  Float @default(0)
 
   status Status @default(OK)
 
@@ -94,6 +94,8 @@ model Fornecedor {
   id               String  @id @default(uuid())
   nome             String
   telefone         String?
+  cnpj             String?
+  email            String?
   prazoEntregaDias Int     @default(2)
 
   estabelecimentoId String

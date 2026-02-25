@@ -87,9 +87,16 @@ export class MovimentacaoService {
         produto.estoqueMinimo,
       );
 
-      // 🔥 NOVA LÓGICA FINANCEIRA
+      // � LÓGICA FINANCEIRA
+      // Se o frontend enviou valorUnitario, usa ele
+      // Senão, usa o preço do produto (venda para saída, compra para entrada)
+      const valorUnitarioRecebido = data.valorUnitario || data.valor_unitario;
       const valorUnitario =
-        tipoNormalizado === "Saida" ? produto.precoVenda : produto.precoCompra;
+        valorUnitarioRecebido !== null && valorUnitarioRecebido !== undefined
+          ? parseFloat(String(valorUnitarioRecebido))
+          : tipoNormalizado === "Saida"
+            ? produto.precoVenda
+            : produto.precoCompra;
 
       const valorTotal = qtd * (valorUnitario ?? 0);
 
@@ -99,6 +106,7 @@ export class MovimentacaoService {
         valorUnitario,
         valorTotal,
         produtoNome: produto.nome,
+        valorRecebidoFrontend: valorUnitarioRecebido,
       });
 
       await tx.produto.update({
