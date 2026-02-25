@@ -6,19 +6,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProdutoRepository = void 0;
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
 /**
+ * Helper: Normaliza categoria removendo acentos
+ */
+function normalizarCategoria(categoria) {
+    const map = {
+        Água: "Agua",
+        Energético: "Energetico",
+    };
+    return map[categoria] || categoria;
+}
+/**
  * Helper: Converte valor monetário de forma segura
  * - Aceita números, strings com ponto ou vírgula decimal
- * - Retorna null para valores inválidos ou vazios
+ * - Retorna 0 para valores inválidos ou vazios
  * - Valida valores negativos
  */
 function parseMoneyValue(value) {
-    // Se undefined, null ou string vazia, retorna null
+    // Se undefined, null ou string vazia, retorna 0
     if (value === undefined || value === null || value === "") {
-        return null;
+        return 0;
     }
     // Se já é número válido
     if (typeof value === "number") {
-        return value >= 0 ? value : null;
+        return value >= 0 ? value : 0;
     }
     // Se é string, limpa e converte
     // Aceita vírgula ou ponto como separador decimal (mobile-friendly)
@@ -26,7 +36,7 @@ function parseMoneyValue(value) {
     const parsed = parseFloat(cleaned);
     // Valida resultado
     if (isNaN(parsed) || parsed < 0) {
-        return null;
+        return 0;
     }
     return parsed;
 }
@@ -44,7 +54,7 @@ class ProdutoRepository {
     async create(data) {
         const produtoData = {
             nome: data.nome,
-            categoria: data.categoria,
+            categoria: normalizarCategoria(data.categoria),
             volume: data.volume,
             estoqueAtual: parseIntValue(data.estoque_atual ?? data.estoqueAtual, 0),
             estoqueMinimo: parseIntValue(data.estoque_minimo ?? data.estoqueMinimo, 5),
@@ -108,7 +118,9 @@ class ProdutoRepository {
         }
         const updateData = {
             nome: data.nome ?? produto.nome,
-            categoria: data.categoria ?? produto.categoria,
+            categoria: data.categoria
+                ? normalizarCategoria(data.categoria)
+                : produto.categoria,
             volume: data.volume ?? produto.volume,
             estoqueAtual: parseIntValue(data.estoque_atual ?? data.estoqueAtual, produto.estoqueAtual),
             estoqueMinimo: parseIntValue(data.estoque_minimo ?? data.estoqueMinimo, produto.estoqueMinimo),

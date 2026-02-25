@@ -12,10 +12,13 @@ class FornecedorController {
     }
     async create(req, res) {
         try {
+            console.log("[FornecedorController] Create - Body:", req.body);
+            console.log("[FornecedorController] Create - Estabelecimento:", req.user.estabelecimentoId);
             const fornecedor = await service.create(req.user.estabelecimentoId, req.body);
             res.status(201).json(fornecedor);
         }
         catch (error) {
+            console.error("[FornecedorController] Erro ao criar:", error);
             res.status(400).json({ error: error.message });
         }
     }
@@ -27,10 +30,13 @@ class FornecedorController {
             if (!id) {
                 throw new Error("ID inválido");
             }
+            console.log("[FornecedorController] Update - ID:", id);
+            console.log("[FornecedorController] Update - Body:", req.body);
             const fornecedor = await service.update(id, req.user.estabelecimentoId, req.body);
             res.json(fornecedor);
         }
         catch (error) {
+            console.error("[FornecedorController] Erro ao atualizar:", error);
             res.status(400).json({ error: error.message });
         }
     }

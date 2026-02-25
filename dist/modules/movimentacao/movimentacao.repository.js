@@ -27,6 +27,12 @@ class MovimentacaoRepository {
                         id: true,
                         nome: true,
                         categoria: true,
+                        fornecedor: {
+                            select: {
+                                id: true,
+                                nome: true,
+                            },
+                        },
                     },
                 },
             },

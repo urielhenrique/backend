@@ -36,16 +36,26 @@ class FornecedorRepository {
         return prisma_1.default.fornecedor.create({
             data: {
                 nome: data.nome,
-                telefone: data.telefone,
+                telefone: data.telefone || null,
+                cnpj: data.cnpj || null,
+                email: data.email || null,
                 prazoEntregaDias: Number(data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2),
                 estabelecimentoId,
             },
         });
     }
     async update(id, estabelecimentoId, data) {
+        // Filtra apenas campos válidos para atualização
+        const updateData = {
+            nome: data.nome,
+            telefone: data.telefone || null,
+            cnpj: data.cnpj || null,
+            email: data.email || null,
+            prazoEntregaDias: Number(data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2),
+        };
         return prisma_1.default.fornecedor.update({
             where: { id },
-            data,
+            data: updateData,
         });
     }
     async delete(id, estabelecimentoId) {

@@ -98,4 +98,32 @@ export class ProdutoController {
     await service.delete(id, req.user!.estabelecimentoId);
     res.json({ message: "Deletado com sucesso" });
   }
+
+  async importLote(req: AuthRequest, res: Response) {
+    try {
+      const { produtos } = req.body;
+
+      if (!produtos || !Array.isArray(produtos)) {
+        res.status(400).json({
+          error: "Campo 'produtos' deve ser um array",
+        });
+        return;
+      }
+
+      const resultado = await service.importarLote(
+        req.user!.estabelecimentoId,
+        produtos,
+      );
+
+      res.status(201).json(resultado);
+    } catch (error: any) {
+      console.error("[ProdutoController.importLote] Erro:", {
+        message: error.message,
+      });
+
+      res.status(400).json({
+        error: error.message,
+      });
+    }
+  }
 }

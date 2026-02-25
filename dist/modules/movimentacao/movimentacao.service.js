@@ -75,8 +75,15 @@ class MovimentacaoService {
                 novoEstoque -= qtd;
             }
             const novoStatus = this.calcularStatus(novoEstoque, produto.estoqueMinimo);
-            // 🔥 NOVA LÓGICA FINANCEIRA
-            const valorUnitario = tipoNormalizado === "Saida" ? produto.precoVenda : produto.precoCompra;
+            // � LÓGICA FINANCEIRA
+            // Se o frontend enviou valorUnitario, usa ele
+            // Senão, usa o preço do produto (venda para saída, compra para entrada)
+            const valorUnitarioRecebido = data.valorUnitario || data.valor_unitario;
+            const valorUnitario = valorUnitarioRecebido !== null && valorUnitarioRecebido !== undefined
+                ? parseFloat(String(valorUnitarioRecebido))
+                : tipoNormalizado === "Saida"
+                    ? produto.precoVenda
+                    : produto.precoCompra;
             const valorTotal = qtd * (valorUnitario ?? 0);
             console.log("💰 Movimentação:", {
                 tipo: tipoNormalizado,
@@ -84,6 +91,7 @@ class MovimentacaoService {
                 valorUnitario,
                 valorTotal,
                 produtoNome: produto.nome,
+                valorRecebidoFrontend: valorUnitarioRecebido,
             });
             await tx.produto.update({
                 where: { id: produto.id },
