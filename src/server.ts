@@ -109,7 +109,7 @@ app.use(
  */
 app.use(
   express.json({
-    limit: "10kb", // Limite de 10kb para prevenir payload attacks
+    limit: "10mb", // Limite aumentado para suportar importação em lote
     verify: (req: any, res, buf) => {
       // Salva raw body para webhook do Stripe
       if (req.originalUrl === "/billing/webhook") {
@@ -119,7 +119,7 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 /**
  * ==========================================

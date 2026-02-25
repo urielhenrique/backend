@@ -15,6 +15,12 @@ const controller = new billing_controller_1.BillingController();
  */
 router.post("/checkout", auth_middleware_1.authMiddleware, (req, res) => controller.createCheckout(req, res));
 /**
+ * POST /billing/complete-checkout
+ * Completar checkout após retorno do Stripe
+ * (Útil para desenvolvimento local onde webhooks não funcionam)
+ */
+router.post("/complete-checkout", auth_middleware_1.authMiddleware, (req, res) => controller.completeCheckout(req, res));
+/**
  * POST /billing/webhook
  * Webhook do Stripe (não requer autenticação)
  * IMPORTANTE: Este endpoint precisa receber raw body

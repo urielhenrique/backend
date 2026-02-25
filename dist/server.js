@@ -95,7 +95,7 @@ app.use((0, cors_1.default)({
  * IMPORTANTE: Webhook do Stripe precisa de raw body
  */
 app.use(express_1.default.json({
-    limit: "10kb", // Limite de 10kb para prevenir payload attacks
+    limit: "10mb", // Limite aumentado para suportar importação em lote
     verify: (req, res, buf) => {
         // Salva raw body para webhook do Stripe
         if (req.originalUrl === "/billing/webhook") {
@@ -103,7 +103,7 @@ app.use(express_1.default.json({
         }
     },
 }));
-app.use(express_1.default.urlencoded({ extended: true, limit: "10kb" }));
+app.use(express_1.default.urlencoded({ extended: true, limit: "10mb" }));
 /**
  * ==========================================
  * COOKIE PARSER

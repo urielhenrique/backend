@@ -15,6 +15,15 @@ router.post("/checkout", authMiddleware, (req, res) =>
 );
 
 /**
+ * POST /billing/complete-checkout
+ * Completar checkout após retorno do Stripe
+ * (Útil para desenvolvimento local onde webhooks não funcionam)
+ */
+router.post("/complete-checkout", authMiddleware, (req, res) =>
+  controller.completeCheckout(req, res),
+);
+
+/**
  * POST /billing/webhook
  * Webhook do Stripe (não requer autenticação)
  * IMPORTANTE: Este endpoint precisa receber raw body

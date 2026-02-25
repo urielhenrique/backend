@@ -94,6 +94,31 @@ class BillingController {
         }
     }
     /**
+     * POST /billing/complete-checkout
+     * Verificar e completar checkout após retorno do Stripe
+     * (Útil para desenvolvimento local onde webhooks não funcionam)
+     */
+    async completeCheckout(req, res) {
+        try {
+            const { estabelecimentoId } = req.user;
+            // Frontend envia session_id (snake_case) por causa do interceptor
+            const sessionId = req.body.sessionId || req.body.session_id;
+            console.log("[Complete Checkout] Request body:", req.body);
+            console.log("[Complete Checkout] Session ID:", sessionId);
+            console.log("[Complete Checkout] Estabelecimento ID:", estabelecimentoId);
+            if (!sessionId) {
+                return res.status(400).json({ error: "Session ID é obrigatório" });
+            }
+            const result = await billingService.completeCheckout(estabelecimentoId, sessionId);
+            console.log("[Complete Checkout] Resultado:", result);
+            res.json(result);
+        }
+        catch (error) {
+            console.error("Erro ao completar checkout:", error);
+            res.status(400).json({ error: error.message });
+        }
+    }
+    /**
      * GET /billing/subscription
      * Obter informações da assinatura
      */

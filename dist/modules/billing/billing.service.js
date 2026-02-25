@@ -341,5 +341,34 @@ class BillingService {
             plano: estabelecimento.plano,
         };
     }
+    /**
+     * Completar checkout após retorno do Stripe
+     * Verifica status da sessão e atualiza plano se pago
+     */
+    async completeCheckout(estabelecimentoId, sessionId) {
+        this.ensureStripeConfigured();
+        // Buscar sessão no Stripe
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        if (session.payment_status !== "paid") {
+            throw new Error("Pagamento não foi completado");
+        }
+        // Verificar se a sessão pertence a este estabelecimento
+        if (session.metadata?.estabelecimentoId !== estabelecimentoId) {
+            throw new Error("Sessão não pertence a este estabelecimento");
+        }
+        // Atualizar plano para PRO
+        const estabelecimento = await prisma_1.default.estabelecimento.update({
+            where: { id: estabelecimentoId },
+            data: {
+                plano: "PRO",
+            },
+        });
+        console.log(`✅ Plano atualizado para PRO: ${estabelecimentoId}`);
+        return {
+            success: true,
+            plano: estabelecimento.plano,
+            message: "Upgrade realizado com sucesso!",
+        };
+    }
 }
 exports.BillingService = BillingService;
