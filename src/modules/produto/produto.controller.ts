@@ -30,6 +30,27 @@ export class ProdutoController {
     res.json(result);
   }
 
+  async findById(req: AuthRequest, res: Response) {
+    try {
+      const id = Array.isArray(req.params.id)
+        ? req.params.id[0]
+        : req.params.id;
+      if (!id) {
+        throw new Error("ID inválido");
+      }
+
+      const produto = await service.findById(id, req.user!.estabelecimentoId);
+      if (!produto) {
+        res.status(404).json({ error: "Produto não encontrado" });
+        return;
+      }
+
+      res.json(produto);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   async update(req: AuthRequest, res: Response) {
     try {
       const id = Array.isArray(req.params.id)

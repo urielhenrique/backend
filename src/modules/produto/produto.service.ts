@@ -31,6 +31,10 @@ export class ProdutoService {
     return this.repository.findAll(estabelecimentoId, cursor, limit);
   }
 
+  async findById(id: string, estabelecimentoId: string) {
+    return this.repository.findById(id, estabelecimentoId);
+  }
+
   async update(id: string, estabelecimentoId: string, data: any) {
     if (data.estoqueAtual !== undefined && data.estoqueMinimo !== undefined) {
       data.status = this.calcularStatus(data.estoqueAtual, data.estoqueMinimo);

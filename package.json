@@ -9,6 +9,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
+    "create:admin": "node scripts/create-admin.js",
+    "create:admin:api": "node scripts/create-admin-via-api.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
