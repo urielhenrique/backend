@@ -72,7 +72,7 @@ function checkEmailConfiguration() {
     SMTP_PASSWORD: process.env.SMTP_PASSWORD
       ? "✓ Configurada"
       : "✗ Não configurada",
-    SMTP_FROM: process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br",
+    SMTP_FROM: process.env.SMTP_FROM || "noreply@mail.coderonin.com.br",
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   };
 
@@ -131,7 +131,7 @@ async function testVerificationEmail() {
   console.log(colors.dim + "─".repeat(70) + colors.reset);
 
   const emailContent = {
-    from: process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br",
+    from: process.env.SMTP_FROM || "noreply@mail.coderonin.com.br",
     to: email,
     subject: "Verifique seu Email - BarStock",
     html: `
@@ -180,7 +180,7 @@ async function testPasswordResetEmail() {
   console.log(colors.dim + "─".repeat(70) + colors.reset);
 
   const emailContent = {
-    from: process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br",
+    from: process.env.SMTP_FROM || "noreply@mail.coderonin.com.br",
     to: email,
     subject: "Redefinir sua Senha - BarStock",
     html: `
@@ -228,7 +228,7 @@ async function testUpgradeEmail() {
   console.log(colors.dim + "─".repeat(70) + colors.reset);
 
   const emailContent = {
-    from: process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br",
+    from: process.env.SMTP_FROM || "noreply@mail.coderonin.com.br",
     to: email,
     subject: "🎉 Bem-vindo ao BarStock PRO!",
     features: [
@@ -287,7 +287,7 @@ async function testEmailWithMockProvider() {
     // Mock do Resend
     const mockResendResponse = {
       id: "email_" + crypto.randomBytes(8).toString("hex"),
-      from: process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br",
+      from: process.env.SMTP_FROM || "noreply@mail.coderonin.com.br",
       to: testEmail,
       created_at: new Date().toISOString(),
       status: "sent",

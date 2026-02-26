@@ -81,7 +81,7 @@ function testConfiguration() {
   console.log();
   console.log("Configurações Atuais:");
   console.log(
-    `  FROM:           ${process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br"}`,
+    `  FROM:           ${process.env.SMTP_FROM || "noreply@mail.coderonin.com.br"}`,
   );
   console.log(
     `  FRONTEND_URL:   ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
@@ -119,7 +119,7 @@ function testVerificationEmail() {
 
   console.log(colors.magenta + "📨 CONTEÚDO DO EMAIL:" + colors.reset);
   console.log("──────────────────────────────────────────────────────────────");
-  console.log(`From:    noreply@barstock.coderonin.com.br`);
+  console.log(`From:    noreply@mail.coderonin.com.br`);
   console.log(`To:      ${email}`);
   console.log(`Subject: Verifique seu Email - BarStock`);
   console.log(`Link:    ${link}`);
@@ -153,7 +153,7 @@ function testPasswordResetEmail() {
 
   console.log(colors.magenta + "📨 CONTEÚDO DO EMAIL:" + colors.reset);
   console.log("──────────────────────────────────────────────────────────────");
-  console.log(`From:    noreply@barstock.coderonin.com.br`);
+  console.log(`From:    noreply@mail.coderonin.com.br`);
   console.log(`To:      ${email}`);
   console.log(`Subject: Redefinir sua Senha - BarStock`);
   console.log(`Link:    ${link}`);
@@ -184,7 +184,7 @@ function testUpgradeEmail() {
 
   console.log(colors.magenta + "📨 CONTEÚDO DO EMAIL:" + colors.reset);
   console.log("──────────────────────────────────────────────────────────────");
-  console.log(`From:    noreply@barstock.coderonin.com.br`);
+  console.log(`From:    noreply@mail.coderonin.com.br`);
   console.log(`To:      ${email}`);
   console.log(`Subject: 🎉 Bem-vindo ao BarStock PRO!`);
   console.log();

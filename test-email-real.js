@@ -94,7 +94,7 @@ async function checkConfiguration() {
     info(`SMTP_USER: ${process.env.SMTP_USER}`);
   }
   info(
-    `SMTP_FROM: ${process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br"}`,
+    `SMTP_FROM: ${process.env.SMTP_FROM || "noreply@mail.coderonin.com.br"}`,
   );
   info(`FRONTEND_URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
 
@@ -159,7 +159,7 @@ async function testVerificationEmail(email) {
       colors.bright + colors.magenta + "Detalhes do Email:" + colors.reset,
     );
     console.log(
-      `From:    ${process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br"}`,
+      `From:    ${process.env.SMTP_FROM || "noreply@mail.coderonin.com.br"}`,
     );
     console.log(`To:      ${email}`);
     console.log(`Subject: Verifique seu Email - BarStock`);
@@ -213,7 +213,7 @@ async function testPasswordResetEmail(email) {
       colors.bright + colors.magenta + "Detalhes do Email:" + colors.reset,
     );
     console.log(
-      `From:    ${process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br"}`,
+      `From:    ${process.env.SMTP_FROM || "noreply@mail.coderonin.com.br"}`,
     );
     console.log(`To:      ${email}`);
     console.log(`Subject: Redefinir sua Senha - BarStock`);

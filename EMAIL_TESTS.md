@@ -240,7 +240,7 @@ SMTP_PASSWORD=sua_app_password
 
 NODE_ENV:                 development
 FRONTEND_URL:             http://localhost:5173
-SMTP_FROM:                noreply@barstock.coderonin.com.br
+SMTP_FROM:                noreply@mail.coderonin.com.br
 
 Resend API:               ✓ Configurado
 SMTP Host:                ✗ Não configurado

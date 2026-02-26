@@ -35,8 +35,7 @@ require("dotenv").config();
 class EmailTestCLI {
   constructor() {
     this.frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    this.smtpFrom =
-      process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br";
+    this.smtpFrom = process.env.SMTP_FROM || "noreply@mail.coderonin.com.br";
     this.appName = "BarStock";
     this.expirationVerify = "1 hora";
     this.expirationReset = "15 minutos";
@@ -347,7 +346,7 @@ class EmailTestCLI {
       "dim",
     );
     this.print(
-      "  SMTP_FROM            - Email from (padrão: noreply@barstock.coderonin.com.br)",
+      "  SMTP_FROM            - Email from (padrão: noreply@mail.coderonin.com.br)",
       "dim",
     );
     this.print("  RESEND_API_KEY       - API key do Resend (opcional)", "dim");
