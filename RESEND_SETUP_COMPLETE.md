@@ -7,7 +7,7 @@
 ```env
 # Adicionado ao .env (PROTEGIDO - não será commitado)
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 ```
 
 ### 2. ✅ Arquivo .env Protegido no .gitignore
@@ -23,7 +23,7 @@ SMTP_FROM=noreply@barstock.com.br
 ```env
 # .env.example (pode ser commitado - template público)
 RESEND_API_KEY=re_your_resend_api_key_here
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 ```
 
 ### 4. ✅ Git Hooks de Segurança Instalados
@@ -81,7 +81,7 @@ node test-email-cli.js config
 ────────────────────────────────────────────────────────────
 NODE_ENV:                 development
 FRONTEND_URL:             http://localhost:5173
-SMTP_FROM:                noreply@barstock.com.br
+SMTP_FROM:                noreply@barstock.coderonin.com.br
 
 Resend API:               ✓ Configurado
 SMTP Host:                ✗ Não configurado
@@ -213,7 +213,7 @@ const apiKey = process.env.RESEND_API_KEY;
 ```bash
 # 1. No servidor de produção, adicione ao .env:
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 FRONTEND_URL=https://app.barstock.com.br
 NODE_ENV=production
 

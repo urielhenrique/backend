@@ -60,7 +60,7 @@ npm install resend
 
 ```env
 RESEND_API_KEY=your_resend_api_key_here
-SMTP_FROM=noreply@barstock.com.br  # ou seu domínio
+SMTP_FROM=noreply@barstock.coderonin.com.br  # ou seu domínio
 FRONTEND_URL=https://app.barstock.com.br  # URL da aplicação
 ```
 
@@ -73,7 +73,7 @@ SMTP_HOST=smtp.seu_provedor.com
 SMTP_PORT=587
 SMTP_USER=seu_email@seu_dominio.com
 SMTP_PASSWORD=sua_senha
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 FRONTEND_URL=https://app.barstock.com.br
 ```
 
@@ -146,7 +146,7 @@ SMTP_USER=seu_email@seu_dominio
 SMTP_PASSWORD=sua_senha
 
 # Standard
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 FRONTEND_URL=https://app.barstock.com.br
 
 # OAuth (se habilitado)

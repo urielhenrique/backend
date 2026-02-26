@@ -10,7 +10,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587");
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
-const SMTP_FROM = process.env.SMTP_FROM || "noreply@barstock.com.br";
+const SMTP_FROM = process.env.SMTP_FROM || "noreply@barstock.coderonin.com.br";
 
 // Transporter Nodemailer (fallback)
 const transporter = SMTP_HOST

@@ -240,7 +240,7 @@ node test-email-completo.js
 
 ```env
 RESEND_API_KEY=re_sua_chave_aqui
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 FRONTEND_URL=https://app.barstock.com.br
 ```
 
@@ -270,7 +270,7 @@ SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=SG.sua_chave_aqui
-SMTP_FROM=noreply@barstock.com.br
+SMTP_FROM=noreply@barstock.coderonin.com.br
 ```
 
 3. Salve e reinicie

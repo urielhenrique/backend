@@ -97,7 +97,7 @@
      SMTP_PORT=587
      SMTP_USER=your_email
      SMTP_PASSWORD=your_password
-     SMTP_FROM=noreply@barstock.com.br
+     SMTP_FROM=noreply@barstock.coderonin.com.br
   3. Restart: npm run dev
   4. Verify: node test-email-cli.js config
 
