@@ -223,7 +223,11 @@ export class EmailVerificationController {
       const { token } = req.body;
       const password = req.body.password || req.body.senha;
       const passwordConfirm =
-        req.body.passwordConfirm || req.body.confirmaSenha;
+        req.body.passwordConfirm ||
+        req.body.confirmaSenha ||
+        req.body.password_confirm ||
+        req.body.confirmPassword ||
+        req.body.password_confirmation;
 
       // Validações
       if (!token || typeof token !== "string") {
