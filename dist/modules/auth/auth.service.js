@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const prisma_1 = __importDefault(require("../../shared/database/prisma"));
 const plano_service_1 = require("../../shared/services/plano.service");
+const email_service_1 = __importDefault(require("../../shared/services/email.service"));
+const token_utils_1 = require("../../shared/utils/token.utils");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const google_auth_library_1 = require("google-auth-library");
@@ -57,8 +59,12 @@ class AuthService {
         if (existingUser) {
             throw new Error("Email já cadastrado");
         }
-        const senhaHash = await bcrypt_1.default.hash(senha, 12); // Usar bcrypt rounds 12 (mais seguro)
+        const senhaHash = await bcrypt_1.default.hash(senha, 12);
         const role = this.determineRole(email);
+        // Gerar verificação de email token
+        const emailVerificationToken = (0, token_utils_1.generateToken)();
+        const hashedEmailToken = (0, token_utils_1.hashToken)(emailVerificationToken);
+        const emailVerificationExpires = (0, token_utils_1.getExpirationDate)(60); // 1 hora
         const estabelecimento = await prisma_1.default.estabelecimento.create({
             data: {
                 nome: nomeEstabelecimento,
@@ -68,12 +74,18 @@ class AuthService {
                         email,
                         senhaHash,
                         role,
+                        emailVerificationToken: hashedEmailToken,
+                        emailVerificationExpires,
+                        emailVerified: false, // Require email verification
                     },
                 },
             },
             include: { usuarios: true },
         });
         const user = estabelecimento.usuarios[0];
+        // Enviar email de verificação
+        // Usar raw token (não hashed) no link de email
+        await email_service_1.default.sendVerificationEmail(email, emailVerificationToken);
         const tokenPayload = {
             userId: user.id,
             estabelecimentoId: estabelecimento.id,
@@ -92,6 +104,7 @@ class AuthService {
                 estabelecimento_id: estabelecimento.id,
                 estabelecimento_nome: estabelecimento.nome,
                 plano: estabelecimento.plano,
+                emailVerified: user.emailVerified,
             },
         };
     }
@@ -109,6 +122,10 @@ class AuthService {
         const senhaValida = await bcrypt_1.default.compare(senha, user.senhaHash);
         if (!senhaValida) {
             throw new Error("Credenciais inválidas");
+        }
+        // NOVO: Verificar se email foi verificado
+        if (!user.emailVerified) {
+            throw new Error("Verifique seu email antes de acessar. Verifique sua caixa de correio.");
         }
         const tokenPayload = {
             userId: user.id,

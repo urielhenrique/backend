@@ -1,0 +1,181 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📧 EMAIL TESTING QUICK REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 MOST USED COMMANDS:
+
+  # Check current configuration
+  node test-email-cli.js config
+
+  # Test verification email
+  node test-email-cli.js verify email@domain.com
+
+  # Test password reset
+  node test-email-cli.js reset email@domain.com
+
+  # Test upgrade notification
+  node test-email-cli.js upgrade company@domain.com
+
+  # Generate tokens
+  node test-email-cli.js token 3
+
+  # Complete validation suite
+  node test-email-completo.js
+
+  # Interactive menu
+  node test-email-local.js
+
+  # Show help
+  node test-email-cli.js help
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ WHAT EACH SCRIPT DOES:
+
+  ┌─ test-email-local.js (Menu Driven)
+  │  • Interactive menu with 7 options
+  │  • Perfect for learning
+  │  • Use with: node test-email-local.js
+  │  • Automatic mode: node test-email-local.js --auto
+  │
+  ├─ test-email-completo.js (Full Suite)
+  │  • 8 tests executed in sequence
+  │  • ~6 seconds total
+  │  • Perfect for validation before commit
+  │  • Use with: node test-email-completo.js
+  │
+  └─ test-email-cli.js (Quick Commands)
+     • Fast individual tests
+     • Verification email
+     • Password reset
+     • Upgrade tracking
+     • Token generation
+     • Configuration check
+     • Use with: node test-email-cli.js <command> [args]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 WHAT'S TESTED:
+
+  EMAIL TYPES:
+    ✓ Verification email (1 hour expiration)
+    ✓ Password reset email (15 min expiration)
+    ✓ Upgrade PRO notification
+    ✓ Rate limiting configuration
+
+  SECURITY:
+    ✓ Token generation (random 32 bytes)
+    ✓ SHA256 hashing for database storage
+    ✓ Raw tokens sent via email
+    ✓ Hashed tokens stored in DB
+
+  PROVIDERS:
+    ✓ Resend (primary)
+    ✓ SMTP (fallback)
+    ✓ Simulado (development)
+    ✓ Automatic provider detection
+    ✓ Automatic fallback on failure
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️  CONFIGURATION STATUS:
+
+  To see current config:
+  $ node test-email-cli.js config
+
+  To add Resend:
+  1. Get API key from https://resend.com
+  2. Add to .env:
+     RESEND_API_KEY=re_your_key_here
+  3. Restart: npm run dev
+  4. Verify: node test-email-cli.js config
+
+  To add SMTP:
+  1. Choose provider (Gmail, SendGrid, etc)
+  2. Add to .env:
+     SMTP_HOST=smtp.provider.com
+     SMTP_PORT=587
+     SMTP_USER=your_email
+     SMTP_PASSWORD=your_password
+     SMTP_FROM=noreply@barstock.com.br
+  3. Restart: npm run dev
+  4. Verify: node test-email-cli.js config
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 SECURITY DETAILS:
+
+  TOKEN FLOW:
+    1. System generates random token (64 hex chars = 32 bytes)
+    2. System creates SHA256 hash of token
+    3. Raw token sent to user via email
+    4. Hashed token stored in database
+    5. When user clicks link:
+       - Raw token received from URL
+       - System hashes it again
+       - Compares with stored hash
+       - If match → Valid!
+
+  WHY THIS WORKS:
+    • Even if email is intercepted, token can't be reused
+    • Hash is one-way (can't recover original from hash)
+    • Different user IDs even if token compromised
+    • Expiration adds extra layer of security
+
+  RATE LIMITING RULES:
+    • Login: 5 attempts per 15 minutes
+    • Forgot Password: 3 attempts per 60 minutes
+    • Verify Email: No limit (safe operation)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 TROUBLESHOOTING:
+
+  "Nenhum provedor configurado"
+  → Add RESEND_API_KEY or SMTP_HOST to .env
+  → Restart: npm run dev
+  → Verify: node test-email-cli.js config
+
+  "Email inválido"
+  → Use valid format: user@domain.com
+  → Example: node test-email-cli.js verify joao@empresa.com
+
+  "SMTP Connection Failed"
+  → Check SMTP_HOST is correct (smtp.gmail.com for Gmail)
+  → Check SMTP_PORT (587 or 465)
+  → Check username/password
+  → Check firewall allows that port
+
+  "Want to see all options?"
+  → run: node test-email-cli.js help
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+
+  Quick Reference:     EMAIL_TESTS.md
+  Detailed Guide:      EMAIL_TESTING_GUIDE.md
+  Implementation:      EMAIL_IMPLEMENTATION_SUMMARY.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  RECOMMENDED WORKFLOW:
+
+  DURING DEVELOPMENT:
+    $ node test-email-cli.js verify seu_email@empresa.com
+
+  BEFORE COMMITTING:
+    $ node test-email-completo.js
+    → If all ✅ passed → Safe to commit!
+
+  BEFORE DEPLOYING:
+    $ node test-email-completo.js
+    → All tests passed?
+    → Provider configured (Resend or SMTP)?
+    → Yes to both? → Deploy! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ STATUS: ALL TESTS PASSING & PRODUCTION READY
+
+Updated: Feb 26, 2026

@@ -26,6 +26,7 @@ if (process.env.NODE_ENV !== "production") {
 ```
 
 **Comportamento:**
+
 - Em `NODE_ENV !== "production"` → Endpoints disponíveis para testes
 - Em `NODE_ENV === "production"` → Endpoints desabilitados automaticamente
 - Nenhuma tentativa de acesso retornará erro 404 em produção
@@ -41,6 +42,7 @@ O serviço de email foi modernizado para usar **Resend** em produção com fallb
 **Arquivo:** [src/shared/services/email.service.ts](src/shared/services/email.service.ts)
 
 **Prioridade de Provedores:**
+
 1. **Resend** (Produção - Recomendado) → Se `RESEND_API_KEY` configurada
 2. **SMTP** (Fallback) → Se credenciais SMTP disponíveis
 3. **Simulado** (Desenvolvimento) → Sem configuração de email
@@ -55,6 +57,7 @@ npm install resend
 ```
 
 **Variáveis de Ambiente:**
+
 ```env
 RESEND_API_KEY=your_resend_api_key_here
 SMTP_FROM=noreply@barstock.com.br  # ou seu domínio
@@ -182,6 +185,7 @@ GOOGLE_CLIENT_SECRET=seu_google_client_secret
 ### Recomendações:
 
 1. **Monitorar Envio de Emails:**
+
    ```bash
    # Exemplo de log para rastrear
    ✅ Email enviado via Resend para usuario@email.com
@@ -212,16 +216,19 @@ GOOGLE_CLIENT_SECRET=seu_google_client_secret
 ### Troubleshooting:
 
 **Email não está sendo enviado:**
+
 1. Verificar `NODE_ENV` e variáveis de ambiente
 2. Validar API key do Resend
 3. Verificar logs da aplicação
 4. Fallback para SMTP se Resend falhar
 
 **Tokens expirando muito rápido:**
+
 1. Verificar `emailVerificationExpires` (padrão: 1 hora)
 2. Verificar `passwordResetExpires` (padrão: 15 minutos)
 
 **Rate limit bloqueando usuários:**
+
 1. Limite de login: 5 tentativas / 15 minutos
 2. Limite de forgot password: 3 tentativas / 60 minutos
 3. Implementar Redis para rate limiter mais robusto (recomendado)
@@ -231,16 +238,19 @@ GOOGLE_CLIENT_SECRET=seu_google_client_secret
 ## 8. **Próximos Passos Recomendados**
 
 ### Curto Prazo (Antes de Deploy):
+
 1. ✅ Configurar Resend ou SMTP
 2. ✅ Testar emails em staging
 3. ✅ Validar todas variáveis de ambiente
 
 ### Médio Prazo (2-4 semanas):
+
 1. Implementar Redis para rate limiter (mais robusto)
 2. Adicionar logging centralizado (ex: LogRocket, Sentry)
 3. Implementar monitoramento de taxas de erro
 
 ### Longo Prazo (1-3 meses):
+
 1. Análise de segurança por terceiros
 2. Implementar 2FA (autenticação de dois fatores)
 3. Adicionar auditoria de ações sensíveis
@@ -249,17 +259,17 @@ GOOGLE_CLIENT_SECRET=seu_google_client_secret
 
 ## 📋 Resumo Final
 
-| Item | Status | Implementado Por |
-|------|--------|------------------|
-| Endpoints de teste protegidos | ✅ | Verificação NODE_ENV |
-| Migração para Resend | ✅ | email.service.ts |
-| Fallback para SMTP | ✅ | email.service.ts |
-| Segurança de tokens | ✅ | Hashing SHA256 |
-| Rate limiting | ✅ | security.middleware.ts |
-| CSRF protection | ✅ | csurf middleware |
-| Email verification | ✅ | emailVerification.controller.ts |
-| Password reset | ✅ | emailVerification.controller.ts |
-| JWT httpOnly | ✅ | auth.controller.ts |
+| Item                          | Status | Implementado Por                |
+| ----------------------------- | ------ | ------------------------------- |
+| Endpoints de teste protegidos | ✅     | Verificação NODE_ENV            |
+| Migração para Resend          | ✅     | email.service.ts                |
+| Fallback para SMTP            | ✅     | email.service.ts                |
+| Segurança de tokens           | ✅     | Hashing SHA256                  |
+| Rate limiting                 | ✅     | security.middleware.ts          |
+| CSRF protection               | ✅     | csurf middleware                |
+| Email verification            | ✅     | emailVerification.controller.ts |
+| Password reset                | ✅     | emailVerification.controller.ts |
+| JWT httpOnly                  | ✅     | auth.controller.ts              |
 
 ---
 

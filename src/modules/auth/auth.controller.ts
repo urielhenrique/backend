@@ -74,9 +74,10 @@ export class AuthController {
 
   async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
+      const email = req.body.email;
+      const senha = req.body.senha || req.body.password;
 
-      const result = await authService.login(email, password);
+      const result = await authService.login(email, senha);
 
       // Define cookies httpOnly
       this.setAuthCookies(res, result.token, result.refreshToken);

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.preventParameterPollution = exports.bodySizeLimiter = exports.errorHandler = exports.securityHeaders = exports.strictLimiter = exports.apiLimiter = exports.loginLimiter = void 0;
+exports.preventParameterPollution = exports.bodySizeLimiter = exports.errorHandler = exports.securityHeaders = exports.strictLimiter = exports.apiLimiter = exports.forgotPasswordLimiter = exports.loginLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PRODUCTION = NODE_ENV === "production";
@@ -26,6 +26,26 @@ exports.loginLimiter = (0, express_rate_limit_1.default)({
         return !req.body.email;
     },
     // Store falha em memória (em produção, use Redis)
+    skipFailedRequests: false,
+});
+/**
+ * Rate Limiter para Forgot Password
+ * Máximo 3 tentativas a cada 60 minutos
+ * Previne spam de emails
+ */
+exports.forgotPasswordLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 60 * 1000, // 60 minutos
+    max: 3, // 3 tentativas por IP por hora
+    message: {
+        error: "RATE_LIMIT_EXCEEDED",
+        message: "Muitas solicitações de reset de senha. Tente novamente em 1 hora.",
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => {
+        // Skip rate limiting para requests sem email
+        return !req.body.email;
+    },
     skipFailedRequests: false,
 });
 /**

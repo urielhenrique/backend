@@ -1,5 +1,11 @@
 import prisma from "../../shared/database/prisma";
 import { PlanoService } from "../../shared/services/plano.service";
+import emailService from "../../shared/services/email.service";
+import {
+  generateToken,
+  hashToken,
+  getExpirationDate,
+} from "../../shared/utils/token.utils";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
@@ -67,8 +73,13 @@ export class AuthService {
       throw new Error("Email já cadastrado");
     }
 
-    const senhaHash = await bcrypt.hash(senha, 12); // Usar bcrypt rounds 12 (mais seguro)
+    const senhaHash = await bcrypt.hash(senha, 12);
     const role = this.determineRole(email);
+
+    // Gerar verificação de email token
+    const emailVerificationToken = generateToken();
+    const hashedEmailToken = hashToken(emailVerificationToken);
+    const emailVerificationExpires = getExpirationDate(60); // 1 hora
 
     const estabelecimento = await prisma.estabelecimento.create({
       data: {
@@ -79,6 +90,9 @@ export class AuthService {
             email,
             senhaHash,
             role,
+            emailVerificationToken: hashedEmailToken,
+            emailVerificationExpires,
+            emailVerified: false, // Require email verification
           },
         },
       },
@@ -86,6 +100,10 @@ export class AuthService {
     });
 
     const user = estabelecimento.usuarios[0];
+
+    // Enviar email de verificação
+    // Usar raw token (não hashed) no link de email
+    await emailService.sendVerificationEmail(email, emailVerificationToken);
 
     const tokenPayload = {
       userId: user.id,
@@ -107,6 +125,7 @@ export class AuthService {
         estabelecimento_id: estabelecimento.id,
         estabelecimento_nome: estabelecimento.nome,
         plano: estabelecimento.plano,
+        emailVerified: user.emailVerified,
       },
     };
   }
@@ -128,6 +147,13 @@ export class AuthService {
 
     if (!senhaValida) {
       throw new Error("Credenciais inválidas");
+    }
+
+    // NOVO: Verificar se email foi verificado
+    if (!user.emailVerified) {
+      throw new Error(
+        "Verifique seu email antes de acessar. Verifique sua caixa de correio.",
+      );
     }
 
     const tokenPayload = {

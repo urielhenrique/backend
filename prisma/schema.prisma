@@ -32,6 +32,15 @@ model Usuario {
   senhaHash String
   role      Role   @default(FUNCIONARIO)
 
+  // Email verification
+  emailVerified Boolean @default(false)
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+
+  // Password reset
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+
   estabelecimentoId String?
   estabelecimento   Estabelecimento? @relation(fields: [estabelecimentoId], references: [id])
 

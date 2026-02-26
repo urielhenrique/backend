@@ -27,6 +27,28 @@ export const loginLimiter = rateLimit({
 });
 
 /**
+ * Rate Limiter para Forgot Password
+ * Máximo 3 tentativas a cada 60 minutos
+ * Previne spam de emails
+ */
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 60 minutos
+  max: 3, // 3 tentativas por IP por hora
+  message: {
+    error: "RATE_LIMIT_EXCEEDED",
+    message:
+      "Muitas solicitações de reset de senha. Tente novamente em 1 hora.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting para requests sem email
+    return !req.body.email;
+  },
+  skipFailedRequests: false,
+});
+
+/**
  * Rate Limiter geral para API
  * Máximo 500 requisições a cada 15 minutos por IP (aumentado para operações em lote)
  */

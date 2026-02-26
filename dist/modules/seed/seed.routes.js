@@ -216,14 +216,14 @@ router.get("/fix-admin", async (req, res) => {
         const email = "uriel.henrique.gomes.uh@gmail.com";
         const novaSenha = "Admin@123456";
         const senhaHash = await bcrypt_1.default.hash(novaSenha, 10);
-        // Atualizar usuario (garantir que existe e é ADMIN sem estabelecimento)
+        // Atualizar usuario (garantir que existe e é ADMIN)
         const usuario = await prisma_1.default.usuario.update({
             where: { email },
             data: {
                 senhaHash,
                 role: "ADMIN",
                 nome: "System Admin",
-                estabelecimentoId: null, // CRÍTICO: Admin de sistema não tem estabelecimento
+                // Mantém o estabelecimentoId existente
             },
             select: {
                 id: true,
@@ -235,13 +235,12 @@ router.get("/fix-admin", async (req, res) => {
         });
         res.json({
             success: true,
-            message: "✅ Admin de sistema configurado com sucesso!",
+            message: "✅ Admin configurado com sucesso!",
             usuario,
             credentials: {
                 email,
                 senha: novaSenha,
             },
-            note: "estabelecimentoId definido como null para admin de sistema",
         });
     }
     catch (error) {

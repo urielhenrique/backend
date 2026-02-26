@@ -436,7 +436,11 @@ export class EmailService {
           html: htmlContent,
         });
       } else {
-        await this.sendViaSmtp(email, "⚠️ Seu plano PRO foi encerrado", htmlContent);
+        await this.sendViaSmtp(
+          email,
+          "⚠️ Seu plano PRO foi encerrado",
+          htmlContent,
+        );
       }
     } catch (error: any) {
       console.error("❌ Erro ao enviar email de downgrade:", error.message);
@@ -537,7 +541,11 @@ export class EmailService {
           html: htmlContent,
         });
       } else {
-        await this.sendViaSmtp(email, "📊 Seu Relatório de Uso - BarStock", htmlContent);
+        await this.sendViaSmtp(
+          email,
+          "📊 Seu Relatório de Uso - BarStock",
+          htmlContent,
+        );
       }
     } catch (error: any) {
       console.error("❌ Erro ao enviar relatório:", error.message);
