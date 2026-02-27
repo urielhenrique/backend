@@ -16,7 +16,8 @@ function normalizarCategoria(categoria: string): string {
  * Helper: Converte valor monetário de forma segura
  * - Aceita números, strings com ponto ou vírgula decimal
  * - Retorna 0 para valores inválidos ou vazios
- * - Valida valores negativos
+ * - Valida valores negativos e limites máximos
+ * - Máximo: R$ 999.999,99
  */
 function parseMoneyValue(value: any): number {
   // Se undefined, null ou string vazia, retorna 0
@@ -26,12 +27,23 @@ function parseMoneyValue(value: any): number {
 
   // Se já é número válido
   if (typeof value === "number") {
-    return value >= 0 ? value : 0;
+    // Valida range: 0 até 999999.99
+    if (value < 0) return 0;
+    if (value > 999999.99) {
+      throw new Error("Valor máximo permitido: R$ 999.999,99");
+    }
+    return value;
   }
 
   // Se é string, limpa e converte
   // Aceita vírgula ou ponto como separador decimal (mobile-friendly)
   const cleaned = String(value).replace(",", ".").trim();
+
+  // Rejeita notação científica (ex: 1e+28)
+  if (cleaned.toLowerCase().includes("e")) {
+    throw new Error("Formato de número inválido");
+  }
+
   const parsed = parseFloat(cleaned);
 
   // Valida resultado
@@ -39,19 +51,44 @@ function parseMoneyValue(value: any): number {
     return 0;
   }
 
+  if (parsed > 999999.99) {
+    throw new Error("Valor máximo permitido: R$ 999.999,99");
+  }
+
   return parsed;
 }
 
 /**
  * Helper: Converte número inteiro de forma segura
+ * - Máximo: 999.999 unidades
  */
 function parseIntValue(value: any, defaultValue: number = 0): number {
   if (value === undefined || value === null || value === "") {
     return defaultValue;
   }
 
-  const parsed = parseInt(String(value));
-  return isNaN(parsed) ? defaultValue : Math.max(0, parsed);
+  const strValue = String(value);
+
+  // Rejeita notação científica (ex: 1e+28)
+  if (strValue.toLowerCase().includes("e")) {
+    throw new Error("Formato de número inválido");
+  }
+
+  const parsed = parseInt(strValue);
+
+  if (isNaN(parsed)) {
+    return defaultValue;
+  }
+
+  if (parsed < 0) {
+    return 0;
+  }
+
+  if (parsed > 999999) {
+    throw new Error("Valor máximo permitido: 999.999 unidades");
+  }
+
+  return parsed;
 }
 
 export class ProdutoRepository {

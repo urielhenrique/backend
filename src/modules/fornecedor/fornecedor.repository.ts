@@ -1,5 +1,41 @@
 import prisma from "../../shared/database/prisma";
 
+/**
+ * Helper: Valida prazo de entrega em dias
+ * - Mínimo: 0 dias
+ * - Máximo: 365 dias (1 ano)
+ */
+function validatePrazoEntregaDias(value: any): number {
+  const defaultValue = 2;
+
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
+
+  const strValue = String(value);
+
+  // Rejeita notação científica (ex: 1e+56)
+  if (strValue.toLowerCase().includes("e")) {
+    throw new Error("Formato de número inválido para prazo de entrega");
+  }
+
+  const parsed = parseInt(strValue);
+
+  if (isNaN(parsed)) {
+    return defaultValue;
+  }
+
+  if (parsed < 0) {
+    return 0;
+  }
+
+  if (parsed > 365) {
+    throw new Error("Prazo de entrega máximo: 365 dias");
+  }
+
+  return parsed;
+}
+
 export class FornecedorRepository {
   async findAll(
     estabelecimentoId: string,
@@ -41,8 +77,8 @@ export class FornecedorRepository {
         telefone: data.telefone || null,
         cnpj: data.cnpj || null,
         email: data.email || null,
-        prazoEntregaDias: Number(
-          data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2,
+        prazoEntregaDias: validatePrazoEntregaDias(
+          data.prazo_entrega_dias ?? data.prazoEntregaDias,
         ),
         estabelecimentoId,
       },
@@ -56,8 +92,8 @@ export class FornecedorRepository {
       telefone: data.telefone || null,
       cnpj: data.cnpj || null,
       email: data.email || null,
-      prazoEntregaDias: Number(
-        data.prazo_entrega_dias ?? data.prazoEntregaDias ?? 2,
+      prazoEntregaDias: validatePrazoEntregaDias(
+        data.prazo_entrega_dias ?? data.prazoEntregaDias,
       ),
     };
 

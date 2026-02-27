@@ -87,23 +87,23 @@ export const validateProduct: ValidationChain[] = [
 
   body("estoqueAtual")
     .optional()
-    .isInt({ min: 0 })
-    .withMessage("Estoque deve ser número inteiro positivo"),
+    .isInt({ min: 0, max: 999999 })
+    .withMessage("Estoque deve ser entre 0 e 999.999 unidades"),
 
   body("estoqueMinimo")
     .optional()
-    .isInt({ min: 0 })
-    .withMessage("Estoque mínimo deve ser número inteiro positivo"),
+    .isInt({ min: 0, max: 999999 })
+    .withMessage("Estoque mínimo deve ser entre 0 e 999.999 unidades"),
 
   body("precoCompra")
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage("Preço de compra inválido"),
+    .isFloat({ min: 0, max: 999999.99 })
+    .withMessage("Preço de compra deve ser entre R$ 0 e R$ 999.999,99"),
 
   body("precoVenda")
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage("Preço de venda inválido"),
+    .isFloat({ min: 0, max: 999999.99 })
+    .withMessage("Preço de venda deve ser entre R$ 0 e R$ 999.999,99"),
 ];
 
 /**
@@ -115,15 +115,15 @@ export const validateMovimentacao: ValidationChain[] = [
     .withMessage("Tipo deve ser 'Entrada' ou 'Saida'"),
 
   body("quantidade")
-    .isInt({ min: 1 })
-    .withMessage("Quantidade deve ser maior que zero"),
+    .isInt({ min: 1, max: 999999 })
+    .withMessage("Quantidade deve ser entre 1 e 999.999 unidades"),
 
   body("produtoId").isUUID().withMessage("ID do produto inválido"),
 
   body("valorUnitario")
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage("Valor unitário inválido"),
+    .isFloat({ min: 0, max: 999999.99 })
+    .withMessage("Valor unitário deve ser entre R$ 0 e R$ 999.999,99"),
 
   body("observacao")
     .optional()
@@ -131,6 +131,47 @@ export const validateMovimentacao: ValidationChain[] = [
     .isLength({ max: 500 })
     .withMessage("Observação muito longa (máximo 500 caracteres)")
     .escape(),
+];
+
+/**
+ * Validações para fornecedor
+ */
+export const validateFornecedor: ValidationChain[] = [
+  body("nome")
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Nome do fornecedor deve ter entre 2 e 100 caracteres")
+    .escape(),
+
+  body("telefone")
+    .optional()
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage("Telefone muito longo (máximo 20 caracteres)"),
+
+  body("cnpj")
+    .optional()
+    .trim()
+    .isLength({ max: 18 })
+    .withMessage("CNPJ inválido"),
+
+  body("email")
+    .optional()
+    .trim()
+    .isEmail()
+    .withMessage("Email inválido")
+    .isLength({ max: 255 })
+    .withMessage("Email muito longo"),
+
+  body("prazoEntregaDias")
+    .optional()
+    .isInt({ min: 0, max: 365 })
+    .withMessage("Prazo de entrega deve ser entre 0 e 365 dias"),
+
+  body("prazo_entrega_dias")
+    .optional()
+    .isInt({ min: 0, max: 365 })
+    .withMessage("Prazo de entrega deve ser entre 0 e 365 dias"),
 ];
 
 /**
