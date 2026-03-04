@@ -43,7 +43,7 @@ GET  /auth/me        # Dados do usuário autenticado
      ```
      https://api.barstock.coderonin.com.br
      https://barstock.coderonin.com.br
-     http://localhost:3000
+     http://localhost:3001
      http://localhost:5173
      ```
 

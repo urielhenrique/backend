@@ -5,9 +5,11 @@ import {
   requireSystemAdmin,
 } from "../../shared/middlewares/auth.middleware";
 import systemEventService from "../../shared/services/systemEvent.service";
+import { captureException } from "../../shared/services/sentry.service";
 import type { EventType } from "@prisma/client";
 
 const router = Router();
+const NODE_ENV = process.env.NODE_ENV || "development";
 
 /**
  * GET /internal/monitoring
@@ -58,5 +60,39 @@ router.get(
     }
   },
 );
+
+/**
+ * GET /internal/monitoring/test-error
+ * Development only - Test error tracking with Sentry
+ * Throws a controlled error to verify Sentry integration
+ */
+router.get("/test-error", (req: Request, res: Response) => {
+  // Only allow in development
+  if (NODE_ENV === "production") {
+    return res.status(403).json({
+      success: false,
+      error: "FORBIDDEN",
+      message: "Test endpoint not available in production",
+    });
+  }
+
+  try {
+    // Simulate an error
+    throw new Error("Test error from Sentry monitoring endpoint");
+  } catch (error: any) {
+    console.error("[Sentry Test] Capturing test error:", error.message);
+    captureException(error, {
+      endpoint: "/internal/monitoring/test-error",
+      type: "development_test",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Test error captured and sent to Sentry",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 export default router;

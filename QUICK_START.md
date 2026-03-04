@@ -47,7 +47,7 @@ STRIPE_PRICE_ID=price_<PRO plan price ID>
 MY_ADMIN_EMAIL=your@email.com
 FRONTEND_URL=https://your-frontend.com
 NODE_ENV=production
-PORT=3000
+PORT=3001
 ```
 
 ### Frontend Service

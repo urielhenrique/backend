@@ -28,7 +28,7 @@ STRIPE_PRICE_ID=price_1ABCdef123456
 MY_ADMIN_EMAIL=your-email@domain.com
 FRONTEND_URL=https://your-frontend-domain.com
 NODE_ENV=production
-PORT=3000
+PORT=3001
 ```
 
 ---

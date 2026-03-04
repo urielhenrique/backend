@@ -118,7 +118,7 @@ https://seudominio.com/login-v2
 **Frontend (.env.local):**
 
 ```bash
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3001
 VITE_GOOGLE_CLIENT_ID=121871816349-h67mqvm49dnlnssngqn4ae07v5e0b59o.apps.googleusercontent.com
 ```
 

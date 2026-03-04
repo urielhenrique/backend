@@ -222,13 +222,13 @@ npx prisma migrate dev --name add-plano-fields-and-indexes
 
 ```bash
 # Teste 1: Criar produto
-curl -X POST http://localhost:3000/produtos \
+curl -X POST http://localhost:3001/produtos \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"nome":"Test","categoria":"Cerveja",...}'
 
 # Teste 2: Ver status
-curl -X GET http://localhost:3000/plano/status \
+curl -X GET http://localhost:3001/plano/status \
   -H "Authorization: Bearer <token>"
 ```
 

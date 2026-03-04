@@ -46,7 +46,7 @@ STRIPE_PRICE_ID=price_1A...seu_price_id_aqui
 Para receber notificações de pagamento:
 
 1. No dashboard: **Developers → Webhooks → Add endpoint**
-2. **Endpoint URL**: `http://localhost:3000/billing/webhook` (local) ou `https://seu-dominio.com/billing/webhook` (produção)
+2. **Endpoint URL**: `http://localhost:3001/billing/webhook` (local) ou `https://seu-dominio.com/billing/webhook` (produção)
 3. **Events to send**:
    - `checkout.session.completed`
    - `customer.subscription.created`
@@ -91,7 +91,7 @@ STRIPE_PRICE_ID=price_1A...
 FRONTEND_URL=http://localhost:5173
 
 NODE_ENV=development
-PORT=3000
+PORT=3001
 ```
 
 ---

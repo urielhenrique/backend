@@ -9,6 +9,16 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import csrf from "csurf";
 
+// Sentry monitoring
+import {
+  initializeSentry,
+  sentryRequestHandler,
+  sentryTracingHandler,
+  sentryErrorHandler,
+  addSentryDataSanitization,
+  captureException,
+} from "./shared/services/sentry.service";
+
 import authRoutes from "./modules/auth/auth.routes";
 import estabelecimentoRoutes from "./modules/estabelecimento/estabelecimento.routes";
 import produtoRoutes from "./modules/produto/produto.routes";
@@ -30,6 +40,14 @@ import {
 const app = express();
 const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PRODUCTION = NODE_ENV === "production";
+
+/**
+ * ==========================================
+ * SENTRY INITIALIZATION (must be first)
+ * ==========================================
+ */
+initializeSentry(app);
+addSentryDataSanitization();
 
 /**
  * ==========================================
@@ -105,6 +123,14 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   }),
 );
+
+/**
+ * ==========================================
+ * SENTRY MIDDLEWARE (must be after CORS, before routes)
+ * ==========================================
+ */
+app.use(sentryRequestHandler);
+app.use(sentryTracingHandler);
 
 /**
  * ==========================================
@@ -222,6 +248,38 @@ app.get("/health", (req, res) => {
 
 /**
  * ==========================================
+ * SENTRY TEST ENDPOINT (Development Only)
+ * ==========================================
+ */
+app.get("/test-sentry-error", (req, res) => {
+  if (NODE_ENV === "production") {
+    return res.status(403).json({
+      success: false,
+      error: "FORBIDDEN",
+      message: "Test endpoint not available in production",
+    });
+  }
+
+  try {
+    throw new Error("Test error from Sentry - /test-sentry-error endpoint");
+  } catch (error: any) {
+    console.error("[Sentry Test] Capturing test error:", error.message);
+    captureException(error, {
+      endpoint: "/test-sentry-error",
+      type: "development_test",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Test error captured and sent to Sentry",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * ==========================================
  * ROUTES
  * ==========================================
  */
@@ -255,22 +313,80 @@ app.use((req, res) => {
 
 /**
  * ==========================================
- * ERROR HANDLER
+ * ERROR HANDLER (with Sentry)
  * ==========================================
+ * Note: errorHandler is called first (from security.middleware),
+ * then sentryErrorHandler passes to error
  */
-app.use(errorHandler);
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    // Capture error in Sentry
+    captureException(err, {
+      url: req.url,
+      method: req.method,
+      ip: req.ip,
+    });
+
+    // Call original error handler
+    errorHandler(err, req, res, next);
+  },
+);
+
+// Sentry error handler (final fallback)
+app.use(sentryErrorHandler);
 
 /**
  * ==========================================
  * START SERVER
  * ==========================================
  */
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const PORT = parseInt(process.env.PORT || "3001", 10);
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📦 Environment: ${NODE_ENV}`);
   console.log(
     `🔒 Security: ${IS_PRODUCTION ? "Production Mode" : "Development Mode"}`,
   );
+});
+
+/**
+ * ==========================================
+ * UNHANDLED EXCEPTION HANDLERS
+ * ==========================================
+ */
+process.on(
+  "unhandledRejection",
+  (reason: Error | any, promise: Promise<any>) => {
+    console.error("[Unhandled Rejection]", reason);
+    captureException(reason, {
+      type: "unhandledRejection",
+      promise: promise.toString(),
+    });
+  },
+);
+
+process.on("uncaughtException", (error: Error) => {
+  console.error("[Uncaught Exception]", error);
+  captureException(error, {
+    type: "uncaughtException",
+  });
+  // In production, gracefully shutdown after logging
+  if (IS_PRODUCTION) {
+    process.exit(1);
+  }
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("[SIGTERM] Shutting down gracefully...");
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
 });

@@ -414,7 +414,7 @@ npm run dev
 
 ```javascript
 // No console do DevTools, tentar fazer request sem token
-fetch("http://localhost:3000/api/produtos", {
+fetch("http://localhost:3001/api/produtos", {
   method: "POST",
   credentials: "include",
   headers: { "Content-Type": "application/json" },

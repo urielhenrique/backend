@@ -117,7 +117,7 @@ STRIPE_PRICE_ID=<from-step-4>
 MY_ADMIN_EMAIL=<your-email@domain.com>
 FRONTEND_URL=https://barstock.coderonin.com.br
 NODE_ENV=production
-PORT=3000
+PORT=3001
 ```
 
 4. Mark as "Build Secret": JWT_SECRET, GOOGLE_CLIENT_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
@@ -304,7 +304,7 @@ function CreateProductForm() {
 ```bash
 # Verify all env vars are set
 # Check DATABASE_URL is accessible
-# Ensure PORT=3000 is available
+# Ensure PORT=3001 is available
 ```
 
 ### Stripe webhook fails

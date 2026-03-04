@@ -91,7 +91,7 @@ STRIPE_PRICE_ID=price_1ABCdef123...
 MY_ADMIN_EMAIL=admin@yourdomain.com
 FRONTEND_URL=https://your-frontend-domain.com
 NODE_ENV=production
-PORT=3000
+PORT=3001
 ```
 
 - **MY_ADMIN_EMAIL**: Email of system administrator
@@ -101,7 +101,7 @@ PORT=3000
   - Used for Stripe redirects after payment
   - Must match CORS allowed origins
 - **NODE_ENV**: Set to `production` (enables security features)
-- **PORT**: Backend server port (default: 3000)
+- **PORT**: Backend server port (default: 3001)
 
 ### Example Backend .env (DO NOT COMMIT)
 
@@ -127,7 +127,7 @@ STRIPE_PRICE_ID=price_1ABCdef123456
 MY_ADMIN_EMAIL=admin@barstock.com
 FRONTEND_URL=https://barstock.coderonin.com.br
 NODE_ENV=production
-PORT=3000
+PORT=3001
 ```
 
 ---

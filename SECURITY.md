@@ -144,7 +144,7 @@ STRIPE_WEBHOOK_SECRET=<from Stripe Webhooks>
 STRIPE_PRICE_ID=<PRO plan price ID from Stripe>
 MY_ADMIN_EMAIL=your@email.com
 FRONTEND_URL=https://your-frontend-domain.com
-PORT=3000
+PORT=3001
 ```
 
 #### Frontend Required:
