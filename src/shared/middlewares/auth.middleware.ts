@@ -45,9 +45,18 @@ export function authMiddleware(
     req.user = decoded;
     next();
   } catch (error) {
+    // If the token is invalid/expired, clear auth cookies to avoid
+    // repeated "expired session" loops on subsequent requests.
+    res.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, { path: "/" });
+    res.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, { path: "/" });
+
+    const isExpiredToken = error instanceof jwt.TokenExpiredError;
+
     return res.status(401).json({
-      error: "INVALID_TOKEN",
-      message: "Token inválido ou expirado",
+      error: isExpiredToken ? "SESSION_EXPIRED" : "INVALID_TOKEN",
+      message: isExpiredToken
+        ? "Sessão expirada. Faça login novamente"
+        : "Token inválido",
     });
   }
 }

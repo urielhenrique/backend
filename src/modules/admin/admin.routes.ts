@@ -83,6 +83,11 @@ router.get(
                 createdAt: true,
               },
             },
+            _count: {
+              select: {
+                produtos: true,
+              },
+            },
             subscriptions: {
               where: { status: { in: ["active", "trialing"] } },
               orderBy: { createdAt: "desc" },
@@ -104,6 +109,7 @@ router.get(
         stripeCustomerId: est.stripeCustomerId,
         criadoEm: est.createdAt,
         usuarios: est.usuarios,
+        produtosCount: est._count.produtos,
         subscription: est.subscriptions[0] || null,
       }));
 
@@ -156,14 +162,30 @@ router.get(
               createdAt: true,
             },
           },
+          _count: {
+            select: {
+              produtos: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
 
+      const mapped = estabelecimentos.map((est) => ({
+        estabelecimentoId: est.id,
+        estabelecimentoNome: est.nome,
+        plano: est.plano,
+        ativo: est.ativo,
+        stripeCustomerId: est.stripeCustomerId,
+        criadoEm: est.createdAt,
+        usuarios: est.usuarios,
+        produtosCount: est._count.produtos,
+      }));
+
       res.json({
         plan: plan.toUpperCase(),
-        total: estabelecimentos.length,
-        estabelecimentos,
+        total: mapped.length,
+        estabelecimentos: mapped,
       });
     } catch (error: any) {
       res.status(500).json({

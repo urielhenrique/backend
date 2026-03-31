@@ -121,8 +121,6 @@ if (process.env.NODE_ENV !== "production") {
 
 // Rotas protegidas
 router.get("/me", authMiddleware, (req, res) => controller.me(req, res));
-router.post("/logout", authMiddleware, (req, res) =>
-  controller.logout(req, res),
-);
+router.post("/logout", (req, res) => controller.logout(req, res));
 
 export default router;
