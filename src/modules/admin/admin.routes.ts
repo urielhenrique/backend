@@ -142,6 +142,9 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     try {
       const plan = String(req.params.plan);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const skip = (page - 1) * limit;
 
       if (!["FREE", "PRO"].includes(plan.toUpperCase())) {
         return res.status(400).json({
@@ -150,26 +153,33 @@ router.get(
         });
       }
 
-      const estabelecimentos = await prisma.estabelecimento.findMany({
-        where: { plano: plan.toUpperCase() as "FREE" | "PRO" },
-        include: {
-          usuarios: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-              role: true,
-              createdAt: true,
+      const where = { plano: plan.toUpperCase() as "FREE" | "PRO" };
+
+      const [estabelecimentos, total] = await Promise.all([
+        prisma.estabelecimento.findMany({
+          where,
+          include: {
+            usuarios: {
+              select: {
+                id: true,
+                nome: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: {
+                produtos: true,
+              },
             },
           },
-          _count: {
-            select: {
-              produtos: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.estabelecimento.count({ where }),
+      ]);
 
       const mapped = estabelecimentos.map((est) => ({
         estabelecimentoId: est.id,
@@ -184,8 +194,14 @@ router.get(
 
       res.json({
         plan: plan.toUpperCase(),
-        total: mapped.length,
+        total,
         estabelecimentos: mapped,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       });
     } catch (error: any) {
       res.status(500).json({
